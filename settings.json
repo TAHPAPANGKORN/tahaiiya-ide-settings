@@ -39,7 +39,7 @@
   "workbench.iconTheme": "material-icon-theme",
   "workbench.colorTheme": "Slack Theme Dark Mode",
   "workbench.editor.showTabs": "multiple",
-  "workbench.activityBar.location": "default",
+  "workbench.activityBar.location": "bottom",
   "workbench.layoutControl.enabled": false,
   "workbench.tips.enabled": false,
   "workbench.startupEditor": "none",
@@ -126,7 +126,6 @@
       "after": ["<Esc>"]
     }
   ],
-  "workbench.statusBar.visible": false,
   "vim.visualModeKeyBindings": [
     {
       "before": [">"],
@@ -136,27 +135,6 @@
       "before": ["<"],
       "commands": ["editor.action.outdentLines"]
     },
-    {
-      "before": ["<Esc>"],
-      "after": ["<Esc>"],
-      "commands": ["workbench.action.toggleStatusbarVisibility"]
-    }
-  ],
-
-  "vim.visualLineModeKeyBindings": [
-    {
-      "before": [">"],
-      "commands": ["editor.action.indentLines"]
-    },
-    {
-      "before": ["<"],
-      "commands": ["editor.action.outdentLines"]
-    },
-    {
-      "before": ["<Esc>"],
-      "after": ["<Esc>"],
-      "commands": ["workbench.action.toggleStatusbarVisibility"]
-    }
   ],
 
   "vim.normalModeKeyBindings": [
@@ -168,26 +146,6 @@
       "before": ["<"],
       "commands": ["editor.action.outdentLines"]
     },
-    {
-      "before": ["v"],
-      "after": ["v"],
-      "commands": ["workbench.action.toggleStatusbarVisibility"]
-    },
-    {
-      "before": ["V"],
-      "after": ["V"],
-      "commands": ["workbench.action.toggleStatusbarVisibility"]
-    },
-    {
-      "before": ["ctrl+v"],
-      "after": ["ctrl+v"],
-      "commands": ["workbench.action.toggleStatusbarVisibility"]
-    },
-    {
-      "before": [":"],
-      "after": [":"],
-      "commands": ["workbench.action.toggleStatusbarVisibility"]
-    }
   ],
 
   // Vim appearance settings
