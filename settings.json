@@ -5,13 +5,14 @@
   "terminal.integrated.cursorBlinking": true,
   "terminal.integrated.cursorStyle": "line",
   "terminal.external.windowsExec": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+  "terminal.integrated.defaultProfile.windows": "Windows PowerShell",
 
   // Editor Settings
   "editor.fontSize": 20,
   "editor.semanticHighlighting.enabled": true,
   "editor.stickyScroll.enabled": false,
   "editor.guides.bracketPairs": "active",
-  "editor.renderWhitespace": "none",
+   "editor.renderWhitespace": "none",
   "editor.minimap.enabled": false,
   "editor.wrappingIndent": "indent",
   "editor.folding": false,
@@ -34,18 +35,24 @@
   "window.density.editorTabHeight": "compact",
 
   // Workbench Settings
+  "workbench.productIconTheme": "fluent-icons",
   "workbench.iconTheme": "material-icon-theme",
   "workbench.colorTheme": "Slack Theme Dark Mode",
   "workbench.editor.showTabs": "multiple",
-  "workbench.activityBar.location": "bottom",
+  "workbench.activityBar.location": "default",
   "workbench.layoutControl.enabled": false,
   "workbench.tips.enabled": false,
-  "workbench.startupEditor": "newUntitledFile",
+  "workbench.startupEditor": "none",
   "workbench.editor.empty.hint": "hidden",
   "workbench.tree.indent": 10,
   "files.autoSave": "afterDelay",
-  "explorer.compactFolders": false,
   "breadcrumbs.enabled": false,
+
+  // side bar 
+  "workbench.tree.renderIndentGuides": "none",
+  "explorer.compactFolders": false,
+  "material-icon-theme.hidesExplorerArrows": true,
+ 
 
   // Extensions Configuration
   "code-runner.runInTerminal": true,
@@ -406,5 +413,5 @@
       // end change tab
     }
     // end workbench
-  ]
+  ],
 } // end

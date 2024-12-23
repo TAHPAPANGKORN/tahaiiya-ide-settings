@@ -1,6 +1,6 @@
 // Place your key bindings in this file to override the defaults
 [
-  // Default Bindings Removed (-commands)
+  // ! Default Bindings Removed (-commands)
   {
     "key": "g g",
     "command": "-list.focusFirst",
@@ -277,5 +277,5 @@
     "key": "alt+e",
     "command": "workbench.action.toggleSidebarVisibility",
     "when": "editorFocus && sideBarVisible"
-  }
+  },
 ]
