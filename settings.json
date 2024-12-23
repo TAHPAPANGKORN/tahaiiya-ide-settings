@@ -53,7 +53,7 @@
   "explorer.compactFolders": false,
   "material-icon-theme.hidesExplorerArrows": true,
 
-  // Extensions Configuration
+  // Extensions Configuration WOW
   "code-runner.runInTerminal": true,
   "code-runner.saveFileBeforeRun": true,
   "codesnap.containerPadding": "0em",
@@ -174,9 +174,9 @@
     "editorGroup.border": "#00000000",
     "editorLineNumber.foreground": "#464646",
     "editorLineNumber.activeForeground": "#c6c6c6",
-    "statusBar.background": "#171819",
-    "statusBar.noFolderBackground": "#171819",
-    "statusBar.debuggingBackground": "#171819",
+    "statusBar.background": "#2C2E07",
+    "statusBar.noFolderBackground": "#2C2E07",
+    "statusBar.debuggingBackground": "#2C2E07",
     "statusBar.foreground": "#ffffff",
     "statusBar.debuggingForeground": "#ffffff",
     "scrollbar.shadow": "#00000000"
