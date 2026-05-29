@@ -1,0 +1,14 @@
+{
+  "name": "editor-settings",
+  "version": "1.0.0",
+  "description": "ide settings",
+  "main": "index.js",
+  "type": "module",
+  "bin": {
+    "antigravity": "./index.js"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.9.0",
+    "picocolors": "^1.1.1"
+  }
+}
