@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { execSync } from 'child_process';
+import { execSync, spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
@@ -21,7 +21,7 @@ const isDryRun = process.env.DRY_RUN === 'true';
 export let warnNoCodeCLI = false;
 
 // helper to install extensions from a JSON list (from VS Code's extensions.json)
-function installExtensions(extensionsFilePath, profileName = null) {
+async function installExtensions(extensionsFilePath, profileName = null) {
     if (!fs.existsSync(extensionsFilePath)) return;
     
     try {
@@ -49,27 +49,91 @@ function installExtensions(extensionsFilePath, profileName = null) {
         let installedCount = 0;
         let failedCount = 0;
         
-        extensions.forEach(ext => {
-            try {
-                if (isDryRun) {
-                    p.log.info(pc.yellow(`[DRY-RUN] Would install extension: ${ext}`));
-                    installedCount++;
-                } else {
-                    const profileArg = profileName ? `--profile "${profileName}"` : '';
-                    execSync(`code ${profileArg} --install-extension ${ext}`, { stdio: 'ignore' });
-                    installedCount++;
-                }
-            } catch (err) {
-                p.log.warn(pc.yellow(`[VSCODE] Failed to install extension: ${ext}`));
-                failedCount++;
+        if (isDryRun) {
+            extensions.forEach(ext => {
+                p.log.info(pc.yellow(`[DRY-RUN] Would install extension: ${ext}`));
+                installedCount++;
+            });
+            s.stop(pc.green(`Simulated extension installation for ${label} (${installedCount} extensions).`));
+        } else {
+            const args = [];
+            if (profileName) {
+                args.push('--profile', profileName);
             }
-        });
-        
-        const completionMessage = isDryRun
-            ? `Simulated extension installation for ${label} (${installedCount} extensions).`
-            : `Completed installing extensions for ${label} (${installedCount} success, ${failedCount} failed).`;
-            
-        s.stop(pc.green(completionMessage));
+            extensions.forEach(ext => {
+                args.push('--install-extension', ext);
+            });
+
+            await new Promise((resolve, reject) => {
+                const child = spawn('code', args, { shell: true });
+                
+                let completedCount = 0;
+                let currentExt = '';
+                const totalCount = extensions.length;
+
+                const updateProgress = () => {
+                    const percent = Math.min(100, Math.round((completedCount / totalCount) * 100));
+                    const filledLength = Math.round((percent / 100) * 15);
+                    const emptyLength = 15 - filledLength;
+                    const progressBar = pc.green('█'.repeat(filledLength)) + pc.gray('░'.repeat(emptyLength));
+                    
+                    let msg = `${actionLabel} for ${label} [${progressBar}] ${percent}%`;
+                    if (currentExt) {
+                        msg += ` | Installing ${currentExt}`;
+                    }
+                    s.message(msg);
+                };
+
+                const parseLine = (line) => {
+                    const installMatch = line.match(/Installing extension '([^'\s]+)'/i);
+                    if (installMatch) {
+                        currentExt = installMatch[1];
+                        updateProgress();
+                    }
+                    
+                    if (/successfully installed|already installed/i.test(line)) {
+                        completedCount++;
+                        installedCount++;
+                        updateProgress();
+                    } else if (/failed installing|not found/i.test(line)) {
+                        completedCount++;
+                        failedCount++;
+                        updateProgress();
+                    }
+                };
+
+                let stdoutRemainder = '';
+                child.stdout.on('data', (data) => {
+                    const lines = (stdoutRemainder + data.toString()).split('\n');
+                    stdoutRemainder = lines.pop();
+                    lines.forEach(parseLine);
+                });
+
+                let stderrRemainder = '';
+                child.stderr.on('data', (data) => {
+                    const lines = (stderrRemainder + data.toString()).split('\n');
+                    stderrRemainder = lines.pop();
+                    lines.forEach(parseLine);
+                });
+
+                child.on('close', (code) => {
+                    if (stdoutRemainder) parseLine(stdoutRemainder);
+                    if (stderrRemainder) parseLine(stderrRemainder);
+                    
+                    completedCount = totalCount;
+                    currentExt = '';
+                    
+                    const completionMessage = `Completed installing extensions for ${label} (${installedCount} success, ${failedCount} failed).`;
+                    s.stop(pc.green(completionMessage));
+                    resolve();
+                });
+
+                child.on('error', (err) => {
+                    s.stop(pc.red(`Failed to run VS Code CLI: ${err.message}`));
+                    reject(err);
+                });
+            });
+        }
     } catch (err) {
         p.log.error(pc.red(`[VSCODE] Failed to parse or process extensions JSON: ${err.message}`));
     }
@@ -173,7 +237,7 @@ export function registerProfile(targetDir, profileName) {
 }
 
 // Injects Custom Profiles Settings & Extensions
-export function injectCustomProfiles(targetDir, hasCodeCLI, opts) {
+export async function injectCustomProfiles(targetDir, hasCodeCLI, opts) {
     const profilesSourceDir = path.join(PROJECT_ROOT, 'vscode', 'profiles');
     if (!fs.existsSync(profilesSourceDir)) return;
 
@@ -185,13 +249,13 @@ export function injectCustomProfiles(targetDir, hasCodeCLI, opts) {
 
     p.log.info(pc.cyan(`[VSCODE] Found ${profiles.length} profile(s) to inject: ${profiles.join(', ')}`));
 
-    profiles.forEach(profileName => {
+    for (const profileName of profiles) {
         p.log.info(pc.blue(`[VSCODE] Injecting profile: ${profileName}`));
 
         const folderHash = registerProfile(targetDir, profileName);
         if (!folderHash) {
             p.log.error(pc.red(`[VSCODE] Could not resolve folder hash for profile "${profileName}". Settings were not copied.`));
-            return;
+            continue;
         }
 
         const profileTargetDir = path.join(targetDir, 'profiles', folderHash);
@@ -199,7 +263,7 @@ export function injectCustomProfiles(targetDir, hasCodeCLI, opts) {
 
         if (fs.existsSync(sourceProfileDir)) {
             const label = `Profile "${profileName}"`;
-            
+
             // Selective copies based on options
             if (opts.settings) {
                 copySettings(sourceProfileDir, profileTargetDir, label);
@@ -230,14 +294,14 @@ export function injectCustomProfiles(targetDir, hasCodeCLI, opts) {
         if (opts.extensions && (hasCodeCLI || isDryRun)) {
             const profileExtensionsFile = path.join(profilesSourceDir, profileName, 'extensions.json');
             if (fs.existsSync(profileExtensionsFile)) {
-                installExtensions(profileExtensionsFile, profileName);
+                await installExtensions(profileExtensionsFile, profileName);
             }
         }
-    });
+    }
 }
 
 // injection for vscode
-export function injectVSCode(options = {}) {
+export async function injectVSCode(options = {}) {
     const opts = {
         settings: true,
         keybindings: true,
@@ -285,7 +349,7 @@ export function injectVSCode(options = {}) {
 
     // 3. Inject Global/Default settings, keybindings, and snippets
     const sourceDir = path.join(PROJECT_ROOT, 'vscode');
-    
+
     if (opts.settings) {
         copySettings(sourceDir, targetDir, 'Global');
     }
@@ -300,7 +364,7 @@ export function injectVSCode(options = {}) {
     if (opts.extensions && (hasCodeCLI || isDryRun)) {
         const globalExtensionsFile = path.join(PROJECT_ROOT, 'vscode', 'extensions.json');
         if (fs.existsSync(globalExtensionsFile)) {
-            installExtensions(globalExtensionsFile);
+            await installExtensions(globalExtensionsFile);
         } else {
             p.log.warn(pc.yellow('[VSCODE] Global extensions.json -> NOT FOUND in repository'));
         }
@@ -308,6 +372,6 @@ export function injectVSCode(options = {}) {
 
     // 5. Inject Custom Profiles Settings & Extensions
     if (opts.profiles) {
-        injectCustomProfiles(targetDir, hasCodeCLI, opts);
+        await injectCustomProfiles(targetDir, hasCodeCLI, opts);
     }
 }

@@ -47,7 +47,7 @@ async function main() {
     s.start('INJECTING PROTOCOLS TO TARGET SYSTEM...');
 
     if (selections.includes('vscode')) {
-        injectVSCode();
+        await injectVSCode();
     }
     if (selections.includes('antigravity')) {
         injectAntigravity();
