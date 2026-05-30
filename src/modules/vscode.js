@@ -34,9 +34,30 @@ async function installExtensions(extensionsFilePath, profileName = null) {
         }
 
         // Extract identifier.id from the extensions.json array
-        const extensions = parsed
+        let extensions = parsed
             .map(item => item?.identifier?.id)
             .filter(id => typeof id === 'string' && id.length > 0);
+            
+        // If we are installing for a profile, also merge the global extensions!
+        if (profileName) {
+            const globalExtensionsFile = path.join(PROJECT_ROOT, 'vscode', 'extensions.json');
+            if (fs.existsSync(globalExtensionsFile) && globalExtensionsFile !== extensionsFilePath) {
+                try {
+                    const globalContent = fs.readFileSync(globalExtensionsFile, 'utf8');
+                    const globalParsed = JSON.parse(globalContent);
+                    if (Array.isArray(globalParsed)) {
+                        const globalExts = globalParsed
+                            .map(item => item?.identifier?.id)
+                            .filter(id => typeof id === 'string' && id.length > 0);
+                        
+                        // Merge and de-duplicate
+                        extensions = [...new Set([...globalExts, ...extensions])];
+                    }
+                } catch (e) {
+                    p.log.warn(pc.yellow(`[VSCODE] Failed to parse global extensions for merging: ${e.message}`));
+                }
+            }
+        }
             
         if (extensions.length === 0) return;
         

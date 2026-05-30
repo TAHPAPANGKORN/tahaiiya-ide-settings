@@ -43,17 +43,12 @@ async function main() {
         }
     }
 
-    const s = p.spinner();
-    s.start('INJECTING PROTOCOLS TO TARGET SYSTEM...');
-
     if (selections.includes('vscode')) {
         await injectVSCode();
     }
     if (selections.includes('antigravity')) {
         injectAntigravity();
     }
-
-    s.stop(pc.green('CORE INJECTION COMPLETED.'));
 
 
     p.note(
