@@ -2,23 +2,48 @@
 
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
+import figlet from 'figlet';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const { version } = require('../package.json');
 
 import { injectVSCode, warnNoCodeCLI } from './modules/vscode.js';
 import { injectAntigravity } from './modules/antigravity.js';
 
+function printBanner() {
+    const line1 = figlet.textSync('IMPORT', {
+        font: 'Coder Mini',
+        horizontalLayout: 'default',
+        width: 120,
+    });
+    const line2 = figlet.textSync('IDE    SETTINGS', {
+        font: 'Coder Mini',
+        horizontalLayout: 'default',
+        width: 120,
+    });
+
+    const brand = pc.bold(pc.cyan('Dev by PAPANGKORN')) + ' · IDE Settings Installer';
+    const ver   = `v${version}`;
+
+    console.log('');
+    console.log(pc.cyan(line1));
+    console.log(pc.white(line2));
+    console.log('');
+    console.log(`${brand} | ${ver}`);
+    console.log('');
+}
 
 async function main() {
     process.stdout.write('\x1Bc');
-
-    // hearder
-    p.intro(pc.cyan('// IMPORT PAPANGKORN SETTINGS //'));
+    printBanner();
 
     // options
     const selections = await p.multiselect({
         message: `SELECT ENVIRONMENTS TO INJECT:\t  ${pc.gray('[ Use Space to Toggle | Up/Down to Move | Enter to Confirm ]')} \n`,
         options: [
-            { value: 'vscode', label: 'VS.CODE', hint: 'Profiles & Extensions' },
-            { value: 'antigravity', label: 'ANTIGRAVITY.IDE', hint: 'Core IDE configuration' },
+            { value: 'vscode', label: 'VS.CODE' },
+            { value: 'antigravity', label: 'ANTIGRAVITY.IDE' },
         ],
         required: false,
     });
