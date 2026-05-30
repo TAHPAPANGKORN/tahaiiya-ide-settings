@@ -145,3 +145,8 @@ vite.config.ts.timestamp-*
 # MAXOS cache directory
 .maxos/
 .DS_Store
+
+
+# test file
+test*
+scratch_*.js
