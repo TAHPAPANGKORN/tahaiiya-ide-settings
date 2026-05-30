@@ -75,15 +75,188 @@ function installExtensions(extensionsFilePath, profileName = null) {
     }
 }
 
+// Copies settings.json from source to target directory.
+export function copySettings(sourceDir, targetDir, label = 'Global') {
+    const sourcePath = path.join(sourceDir, 'settings.json');
+    const targetPath = path.join(targetDir, 'settings.json');
+    if (fs.existsSync(sourcePath)) {
+        try {
+            copySync(sourcePath, targetPath);
+            p.log.success(pc.green(`[VSCODE] ${label} settings.json -> SUCCESS`));
+        } catch (err) {
+            p.log.error(pc.red(`[VSCODE] Failed to copy ${label} settings.json: ${err.message}`));
+        }
+    } else {
+        p.log.warn(pc.yellow(`[VSCODE] ${label} settings.json -> NOT FOUND in repository`));
+    }
+}
+
+// Copies keybindings.json from source to target directory.
+export function copyKeybindings(sourceDir, targetDir, label = 'Global') {
+    const sourcePath = path.join(sourceDir, 'keybindings.json');
+    const targetPath = path.join(targetDir, 'keybindings.json');
+    if (fs.existsSync(sourcePath)) {
+        try {
+            copySync(sourcePath, targetPath);
+            p.log.success(pc.green(`[VSCODE] ${label} keybindings.json -> SUCCESS`));
+        } catch (err) {
+            p.log.error(pc.red(`[VSCODE] Failed to copy ${label} keybindings.json: ${err.message}`));
+        }
+    } else {
+        p.log.warn(pc.yellow(`[VSCODE] ${label} keybindings.json -> NOT FOUND in repository`));
+    }
+}
+
+// Copies snippets directory recursively from source to target directory.
+export function copySnippets(sourceDir, targetDir, label = 'Global') {
+    const sourcePath = path.join(sourceDir, 'snippets');
+    const targetPath = path.join(targetDir, 'snippets');
+    if (fs.existsSync(sourcePath)) {
+        try {
+            copySync(sourcePath, targetPath);
+            p.log.success(pc.green(`[VSCODE] ${label} snippets -> SUCCESS`));
+        } catch (err) {
+            p.log.error(pc.red(`[VSCODE] Failed to copy ${label} snippets: ${err.message}`));
+        }
+    } else {
+        p.log.warn(pc.yellow(`[VSCODE] ${label} snippets -> NOT FOUND in repository`));
+    }
+}
+
+// Registers a profile in storage.json and returns its folder hash.
+export function registerProfile(targetDir, profileName) {
+    const storageFile = path.join(targetDir, 'globalStorage/storage.json');
+    let folderHash = null;
+
+    let storage = { userDataProfiles: [] };
+    if (fs.existsSync(storageFile)) {
+        try {
+            storage = JSON.parse(fs.readFileSync(storageFile, 'utf8'));
+        } catch (err) {
+            p.log.error(pc.red(`[VSCODE] Failed to parse storage.json, creating a fresh one: ${err.message}`));
+        }
+    }
+
+    if (!storage.userDataProfiles) {
+        storage.userDataProfiles = [];
+    }
+
+    const registeredProfiles = storage.userDataProfiles;
+    const foundProfile = registeredProfiles.find(p => p.name === profileName);
+
+    if (foundProfile) {
+        folderHash = foundProfile.location;
+    } else {
+        const randomHash = '-' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16);
+        folderHash = randomHash;
+
+        registeredProfiles.push({
+            location: folderHash,
+            name: profileName,
+            useDefaultFlags: {
+                settings: true,
+                snippets: true,
+                keybindings: true
+            }
+        });
+
+        try {
+            fs.mkdirSync(path.dirname(storageFile), { recursive: true });
+            fs.writeFileSync(storageFile, JSON.stringify(storage, null, 4), 'utf8');
+            p.log.success(pc.green(`[VSCODE] Registered new profile "${profileName}" in storage.json`));
+        } catch (err) {
+            p.log.error(pc.red(`[VSCODE] Failed to update storage.json: ${err.message}`));
+            return null;
+        }
+    }
+    return folderHash;
+}
+
+// Injects Custom Profiles Settings & Extensions
+export function injectCustomProfiles(targetDir, hasCodeCLI, opts) {
+    const profilesSourceDir = path.join(PROJECT_ROOT, 'vscode', 'profiles');
+    if (!fs.existsSync(profilesSourceDir)) return;
+
+    const profiles = fs.readdirSync(profilesSourceDir).filter(file => {
+        return fs.statSync(path.join(profilesSourceDir, file)).isDirectory();
+    });
+
+    if (profiles.length === 0) return;
+
+    p.log.info(pc.cyan(`[VSCODE] Found ${profiles.length} profile(s) to inject: ${profiles.join(', ')}`));
+
+    profiles.forEach(profileName => {
+        p.log.info(pc.blue(`[VSCODE] Injecting profile: ${profileName}`));
+
+        const folderHash = registerProfile(targetDir, profileName);
+        if (!folderHash) {
+            p.log.error(pc.red(`[VSCODE] Could not resolve folder hash for profile "${profileName}". Settings were not copied.`));
+            return;
+        }
+
+        const profileTargetDir = path.join(targetDir, 'profiles', folderHash);
+        const sourceProfileDir = path.join(profilesSourceDir, profileName);
+
+        if (fs.existsSync(sourceProfileDir)) {
+            const label = `Profile "${profileName}"`;
+            
+            // Selective copies based on options
+            if (opts.settings) {
+                copySettings(sourceProfileDir, profileTargetDir, label);
+            }
+            if (opts.keybindings) {
+                copyKeybindings(sourceProfileDir, profileTargetDir, label);
+            }
+            if (opts.snippets) {
+                copySnippets(sourceProfileDir, profileTargetDir, label);
+            }
+
+            // Also copy other non-special files that might exist in the profile folder (excluding special config files)
+            try {
+                fs.readdirSync(sourceProfileDir).forEach(item => {
+                    if (['settings.json', 'keybindings.json', 'snippets', 'extensions.json'].includes(item)) {
+                        return;
+                    }
+                    const sourcePath = path.join(sourceProfileDir, item);
+                    const targetPath = path.join(profileTargetDir, item);
+                    copySync(sourcePath, targetPath);
+                });
+            } catch (err) {
+                p.log.error(pc.red(`[VSCODE] Failed to copy custom files for profile "${profileName}": ${err.message}`));
+            }
+        }
+
+        // Install profile extensions
+        if (opts.extensions && (hasCodeCLI || isDryRun)) {
+            const profileExtensionsFile = path.join(profilesSourceDir, profileName, 'extensions.json');
+            if (fs.existsSync(profileExtensionsFile)) {
+                installExtensions(profileExtensionsFile, profileName);
+            }
+        }
+    });
+}
+
 // injection for vscode
-export function injectVSCode() {
+export function injectVSCode(options = {}) {
+    const opts = {
+        settings: true,
+        keybindings: true,
+        snippets: true,
+        extensions: true,
+        profiles: true,
+        font: true,
+        ...options
+    };
+
     // 0. OS Compatibility Check
     if (process.platform !== 'darwin' && !isDryRun) {
         p.log.warn(pc.yellow(`[VSCODE] Warning: This script is optimized for macOS. Platform detected: ${process.platform}. Paths and permissions may differ.`));
     }
 
     // 0.1 Install FiraCode Nerd Font Mono
-    installFont();
+    if (opts.font) {
+        installFont();
+    }
 
     // 1. Determine target directory based on mode
     const targetDir = process.env.VSCODE_TARGET_DIR || path.join(HOME, 'Library/Application Support/Code/User');
@@ -111,25 +284,20 @@ export function injectVSCode() {
     }
 
     // 3. Inject Global/Default settings, keybindings, and snippets
-    const globalItems = ['settings.json', 'keybindings.json', 'snippets'];
-    globalItems.forEach(item => {
-        const sourcePath = path.join(PROJECT_ROOT, 'vscode', item);
-        const targetPath = path.join(targetDir, item);
-
-        if (fs.existsSync(sourcePath)) {
-            try {
-                copySync(sourcePath, targetPath);
-                p.log.success(pc.green(`[VSCODE] Global ${item} -> SUCCESS`));
-            } catch (err) {
-                p.log.error(pc.red(`[VSCODE] Failed to copy global ${item}: ${err.message}`));
-            }
-        } else {
-            p.log.warn(pc.yellow(`[VSCODE] Global ${item} -> NOT FOUND in repository`));
-        }
-    });
+    const sourceDir = path.join(PROJECT_ROOT, 'vscode');
+    
+    if (opts.settings) {
+        copySettings(sourceDir, targetDir, 'Global');
+    }
+    if (opts.keybindings) {
+        copyKeybindings(sourceDir, targetDir, 'Global');
+    }
+    if (opts.snippets) {
+        copySnippets(sourceDir, targetDir, 'Global');
+    }
 
     // 4. Inject Global/Default Extensions
-    if (hasCodeCLI || isDryRun) {
+    if (opts.extensions && (hasCodeCLI || isDryRun)) {
         const globalExtensionsFile = path.join(PROJECT_ROOT, 'vscode', 'extensions.json');
         if (fs.existsSync(globalExtensionsFile)) {
             installExtensions(globalExtensionsFile);
@@ -139,96 +307,7 @@ export function injectVSCode() {
     }
 
     // 5. Inject Custom Profiles Settings & Extensions
-    const profilesSourceDir = path.join(PROJECT_ROOT, 'vscode', 'profiles');
-    if (fs.existsSync(profilesSourceDir)) {
-        const profiles = fs.readdirSync(profilesSourceDir).filter(file => {
-            return fs.statSync(path.join(profilesSourceDir, file)).isDirectory();
-        });
-
-        if (profiles.length > 0) {
-            p.log.info(pc.cyan(`[VSCODE] Found ${profiles.length} profile(s) to inject: ${profiles.join(', ')}`));
-            
-            profiles.forEach(profileName => {
-                p.log.info(pc.blue(`[VSCODE] Injecting profile: ${profileName}`));
-                
-                // B. Read and update storage.json to map profile name to folder hash
-                const storageFile = path.join(targetDir, 'globalStorage/storage.json');
-                let folderHash = null;
-
-                // Programmatic Profile Registration:
-                // Create storage.json if missing, or update it to register the profile.
-                let storage = { userDataProfiles: [] };
-                if (fs.existsSync(storageFile)) {
-                    try {
-                        storage = JSON.parse(fs.readFileSync(storageFile, 'utf8'));
-                    } catch (err) {
-                        p.log.error(pc.red(`[VSCODE] Failed to parse storage.json, creating a fresh one: ${err.message}`));
-                    }
-                }
-
-                if (!storage.userDataProfiles) {
-                    storage.userDataProfiles = [];
-                }
-
-                const registeredProfiles = storage.userDataProfiles;
-                const foundProfile = registeredProfiles.find(p => p.name === profileName);
-
-                if (foundProfile) {
-                    folderHash = foundProfile.location;
-                } else {
-                    // Generate a unique 8-character hex hash matching VS Code conventions (prefixed with '-')
-                    const randomHash = '-' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16);
-                    folderHash = randomHash;
-
-                    registeredProfiles.push({
-                        location: folderHash,
-                        name: profileName,
-                        useDefaultFlags: {
-                            settings: true,
-                            snippets: true,
-                            keybindings: true
-                        }
-                    });
-
-                    try {
-                        // Ensure globalStorage directory exists
-                        fs.mkdirSync(path.dirname(storageFile), { recursive: true });
-                        fs.writeFileSync(storageFile, JSON.stringify(storage, null, 4), 'utf8');
-                        p.log.success(pc.green(`[VSCODE] Registered new profile "${profileName}" in storage.json`));
-                    } catch (err) {
-                        p.log.error(pc.red(`[VSCODE] Failed to update storage.json: ${err.message}`));
-                    }
-                }
-
-                // C. Copy the entire profile directory contents directly
-                if (folderHash) {
-                    const profileTargetDir = path.join(targetDir, 'profiles', folderHash);
-                    const sourceProfileDir = path.join(profilesSourceDir, profileName);
-                    
-                    if (fs.existsSync(sourceProfileDir)) {
-                        try {
-                            fs.readdirSync(sourceProfileDir).forEach(item => {
-                                const sourcePath = path.join(sourceProfileDir, item);
-                                const targetPath = path.join(profileTargetDir, item);
-                                copySync(sourcePath, targetPath);
-                            });
-                            p.log.success(pc.green(`[VSCODE] Profile "${profileName}" configurations -> SUCCESS`));
-                        } catch (err) {
-                            p.log.error(pc.red(`[VSCODE] Failed to copy Profile "${profileName}" configurations: ${err.message}`));
-                        }
-                    }
-                } else {
-                    p.log.error(pc.red(`[VSCODE] Could not resolve folder hash for profile "${profileName}". Settings were not copied.`));
-                }
-
-                // D. Install extensions for this profile
-                if (hasCodeCLI || isDryRun) {
-                    const profileExtensionsFile = path.join(profilesSourceDir, profileName, 'extensions.json');
-                    if (fs.existsSync(profileExtensionsFile)) {
-                        installExtensions(profileExtensionsFile, profileName);
-                    }
-                }
-            });
-        }
+    if (opts.profiles) {
+        injectCustomProfiles(targetDir, hasCodeCLI, opts);
     }
 }
