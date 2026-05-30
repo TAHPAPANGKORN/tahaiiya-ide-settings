@@ -6,6 +6,9 @@ import { fileURLToPath } from 'url';
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
 import { exportVSCode } from './modules/export.js';
+import { enableVimNavigation } from './utils/keymap.js';
+
+enableVimNavigation();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);

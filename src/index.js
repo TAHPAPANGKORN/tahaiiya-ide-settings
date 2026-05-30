@@ -10,6 +10,9 @@ const { version } = require('../package.json');
 
 import { injectVSCode, warnNoCodeCLI } from './modules/vscode.js';
 import { injectAntigravity } from './modules/antigravity.js';
+import { enableVimNavigation } from './utils/keymap.js';
+
+enableVimNavigation();
 
 function printBanner() {
     const line1 = figlet.textSync('IMPORT', {
