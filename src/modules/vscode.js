@@ -65,11 +65,12 @@ async function installExtensions(extensionsFilePath, profileName = null) {
             });
 
             await new Promise((resolve, reject) => {
-                const child = spawn('code', args, { shell: true });
+                const child = spawn('code', args);
                 
                 let completedCount = 0;
                 let currentExt = '';
                 const totalCount = extensions.length;
+                let lastMsg = '';
 
                 const updateProgress = () => {
                     const percent = Math.min(100, Math.round((completedCount / totalCount) * 100));
@@ -81,7 +82,11 @@ async function installExtensions(extensionsFilePath, profileName = null) {
                     if (currentExt) {
                         msg += ` | Installing ${currentExt}`;
                     }
-                    s.message(msg);
+                    
+                    if (msg !== lastMsg) {
+                        lastMsg = msg;
+                        s.message(msg);
+                    }
                 };
 
                 const parseLine = (line) => {
