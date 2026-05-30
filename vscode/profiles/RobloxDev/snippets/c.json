@@ -1,0 +1,31 @@
+{
+    "start main": {
+        "prefix": "mainc",
+        "body": [
+            "#include <stdio.h>",
+            "",
+            "int main()",
+            "{",
+            "    $0",
+            "    return 0;",
+            "}"
+        ],
+        "description": "Snippet for starting a basic C program with main function"
+    },
+    "For loop with printf": {
+        "prefix": "fori",
+        "body": [
+            "for (int i=0; i<$1; i+=$2) {",
+            "   $3",
+            "}",
+        ],
+        "description": "For loop with printf statement"
+    },
+    "difine len": {
+        "prefix": "definelen",
+        "body": [
+            "#define len(array) (sizeof(array) / sizeof(array[0]))"
+        ],
+        "description": "shout cut to define len"
+    }
+}

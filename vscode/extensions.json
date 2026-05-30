@@ -1,0 +1,12 @@
+[
+  {
+    "identifier": {
+      "id": "dbaeumer.vscode-eslint"
+    }
+  },
+  {
+    "identifier": {
+      "id": "esbenp.prettier-vscode"
+    }
+  }
+]
