@@ -34,9 +34,6 @@
   "window.customTitleBarVisibility": "windowed",
   "window.menuBarVisibility": "compact",
   "window.density.editorTabHeight": "compact",
-
-  // Workbench Settings
-  "workbench.productIconTheme": "fluent-icons",
   "workbench.colorTheme": "Slack Theme Dark Mode",
   "workbench.editor.showTabs": "multiple",
   "workbench.activityBar.location": "bottom",
