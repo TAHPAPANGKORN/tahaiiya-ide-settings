@@ -13,6 +13,11 @@ this project make it easy to import and export IDE settings
 npx TAHPAPANGKORN/tahaiiya-ide-settings 
 ```
 
+- ### if you don't have nodejs, you can use this command
+```bash
+curl -fsSL https://raw.githubusercontent.com/TAHPAPANGKORN/tahaiiya-ide-settings/main/script/install.sh | bash
+```
+
 - ### export
 ```bash
 npx TAHPAPANGKORN/tahaiiya-ide-settings export
