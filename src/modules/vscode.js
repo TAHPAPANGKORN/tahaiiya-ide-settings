@@ -71,94 +71,72 @@ async function installExtensions(extensionsFilePath, profileName = null) {
         let failedCount = 0;
         
         if (isDryRun) {
-            extensions.forEach(ext => {
+            for (let i = 0; i < extensions.length; i++) {
+                const ext = extensions[i];
+                const percent = Math.min(100, Math.round(((i + 1) / extensions.length) * 100));
+                const filledLength = Math.round((percent / 100) * 15);
+                const emptyLength = 15 - filledLength;
+                const progressBar = pc.green('█'.repeat(filledLength)) + pc.gray('░'.repeat(emptyLength));
+                s.message(`${actionLabel} for ${label} [${progressBar}] ${percent}% | ${ext}`);
                 p.log.info(pc.yellow(`[DRY-RUN] Would install extension: ${ext}`));
                 installedCount++;
-            });
+            }
             s.stop(pc.green(`Simulated extension installation for ${label} (${installedCount} extensions).`));
         } else {
-            const args = [];
-            if (profileName) {
-                args.push('--profile', profileName);
-            }
-            extensions.forEach(ext => {
-                args.push('--install-extension', ext);
-            });
+            // Spawn all installs concurrently (fast), each process resolves its own
+            // Promise and increments a shared counter when done → accurate progress %.
+            let completedCount = 0;
+            const totalCount = extensions.length;
 
-            await new Promise((resolve, reject) => {
-                const child = spawn('code', args);
-                
-                let completedCount = 0;
-                let currentExt = '';
-                const totalCount = extensions.length;
-                let lastMsg = '';
+            const updateProgress = (activeExt = '') => {
+                const percent = Math.min(100, Math.round((completedCount / totalCount) * 100));
+                const filledLength = Math.round((percent / 100) * 15);
+                const emptyLength = 15 - filledLength;
+                const progressBar = pc.green('█'.repeat(filledLength)) + pc.gray('░'.repeat(emptyLength));
+                let msg = `${actionLabel} for ${label} [${progressBar}] ${percent}% | ${totalCount - completedCount} remaining`;
+                if (activeExt) msg += ` | installing ${activeExt}`;
+                s.message(msg);
+            };
 
-                const updateProgress = () => {
-                    const percent = Math.min(100, Math.round((completedCount / totalCount) * 100));
-                    const filledLength = Math.round((percent / 100) * 15);
-                    const emptyLength = 15 - filledLength;
-                    const progressBar = pc.green('█'.repeat(filledLength)) + pc.gray('░'.repeat(emptyLength));
-                    
-                    let msg = `${actionLabel} for ${label} [${progressBar}] ${percent}%`;
-                    if (currentExt) {
-                        msg += ` | Installing ${currentExt}`;
-                    }
-                    
-                    if (msg !== lastMsg) {
-                        lastMsg = msg;
-                        s.message(msg);
-                    }
-                };
+            updateProgress();
 
-                const parseLine = (line) => {
-                    const installMatch = line.match(/Installing extension '([^'\s]+)'/i);
-                    if (installMatch) {
-                        currentExt = installMatch[1];
-                        updateProgress();
-                    }
-                    
-                    if (/successfully installed|already installed/i.test(line)) {
-                        completedCount++;
-                        installedCount++;
-                        updateProgress();
-                    } else if (/failed installing|not found/i.test(line)) {
-                        completedCount++;
-                        failedCount++;
-                        updateProgress();
-                    }
-                };
+            await Promise.all(
+                extensions.map((ext) => {
+                    const args = ['--install-extension', ext];
+                    if (profileName) args.unshift('--profile', profileName);
 
-                let stdoutRemainder = '';
-                child.stdout.on('data', (data) => {
-                    const lines = (stdoutRemainder + data.toString()).split('\n');
-                    stdoutRemainder = lines.pop();
-                    lines.forEach(parseLine);
-                });
+                    return new Promise((resolve) => {
+                        const child = spawn('code', args);
 
-                let stderrRemainder = '';
-                child.stderr.on('data', (data) => {
-                    const lines = (stderrRemainder + data.toString()).split('\n');
-                    stderrRemainder = lines.pop();
-                    lines.forEach(parseLine);
-                });
+                        let output = '';
+                        child.stdout.on('data', (d) => { output += d.toString(); });
+                        child.stderr.on('data', (d) => { output += d.toString(); });
 
-                child.on('close', (code) => {
-                    if (stdoutRemainder) parseLine(stdoutRemainder);
-                    if (stderrRemainder) parseLine(stderrRemainder);
-                    
-                    completedCount = totalCount;
-                    currentExt = '';
-                    
-                    const completionMessage = `Completed installing extensions for ${label} (${installedCount} success, ${failedCount} failed).`;
-                    s.stop(pc.green(completionMessage));
-                    resolve();
-                });
+                        child.on('close', () => {
+                            if (/successfully installed|already installed/i.test(output)) {
+                                installedCount++;
+                            } else if (/failed installing|not found/i.test(output)) {
+                                failedCount++;
+                            } else {
+                                installedCount++; // treat ambiguous as success
+                            }
+                            completedCount++;
+                            updateProgress();
+                            resolve();
+                        });
 
-                child.on('error', (err) => {
-                    s.stop(pc.red(`Failed to run VS Code CLI: ${err.message}`));
-                    reject(err);
-                });
-            });
+                        child.on('error', () => {
+                            failedCount++;
+                            completedCount++;
+                            updateProgress();
+                            resolve();
+                        });
+                    });
+                })
+            );
+
+            const completionMessage = `Completed installing extensions for ${label} (${installedCount} success, ${failedCount} failed).`;
+            s.stop(pc.green(completionMessage));
         }
     } catch (err) {
         p.log.error(pc.red(`[VSCODE] Failed to parse or process extensions JSON: ${err.message}`));
