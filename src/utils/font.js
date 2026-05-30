@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
+import os from 'os';
 
 const HOME = process.env.HOME || os.homedir();
 const isTestMode = process.argv.includes('--test');

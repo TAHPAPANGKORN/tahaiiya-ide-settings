@@ -1,6 +1,6 @@
 {
   "name": "editor-settings",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "ide settings",
   "main": "src/index.js",
   "type": "module",
