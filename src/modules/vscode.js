@@ -14,8 +14,8 @@ const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, '../../');
 const HOME = process.env.HOME;
 
-// Detect if test/dry-run mode is enabled (via CLI flag --test or env var TEST_MODE=true)
-const isTestMode = process.argv.includes('--test') || process.env.TEST_MODE === 'true';
+// Detect if dry-run mode is enabled
+const isDryRun = process.env.DRY_RUN === 'true';
 
 // Live binding export to indicate if the code CLI warning should be shown post-install
 export let warnNoCodeCLI = false;
@@ -41,7 +41,7 @@ function installExtensions(extensionsFilePath, profileName = null) {
         if (extensions.length === 0) return;
         
         const label = profileName ? `profile "${profileName}"` : 'Default profile';
-        const actionLabel = isTestMode ? 'Simulating extension installation' : 'Installing extensions';
+        const actionLabel = isDryRun ? 'Simulating extension installation' : 'Installing extensions';
         
         const s = p.spinner();
         s.start(`${actionLabel} for ${label}...`);
@@ -51,7 +51,7 @@ function installExtensions(extensionsFilePath, profileName = null) {
         
         extensions.forEach(ext => {
             try {
-                if (isTestMode) {
+                if (isDryRun) {
                     p.log.info(pc.yellow(`[DRY-RUN] Would install extension: ${ext}`));
                     installedCount++;
                 } else {
@@ -65,7 +65,7 @@ function installExtensions(extensionsFilePath, profileName = null) {
             }
         });
         
-        const completionMessage = isTestMode
+        const completionMessage = isDryRun
             ? `Simulated extension installation for ${label} (${installedCount} extensions).`
             : `Completed installing extensions for ${label} (${installedCount} success, ${failedCount} failed).`;
             
@@ -78,7 +78,7 @@ function installExtensions(extensionsFilePath, profileName = null) {
 // injection for vscode
 export function injectVSCode() {
     // 0. OS Compatibility Check
-    if (process.platform !== 'darwin' && !isTestMode) {
+    if (process.platform !== 'darwin' && !isDryRun) {
         p.log.warn(pc.yellow(`[VSCODE] Warning: This script is optimized for macOS. Platform detected: ${process.platform}. Paths and permissions may differ.`));
     }
 
@@ -86,11 +86,9 @@ export function injectVSCode() {
     installFont();
 
     // 1. Determine target directory based on mode
-    const targetDir = isTestMode
-        ? path.join(PROJECT_ROOT, 'test-output/Code/User')
-        : path.join(HOME, 'Library/Application Support/Code/User');
+    const targetDir = process.env.VSCODE_TARGET_DIR || path.join(HOME, 'Library/Application Support/Code/User');
 
-    if (isTestMode) {
+    if (isDryRun) {
         p.log.info(pc.magenta('\n=== RUNNING IN SAFE TEST / DRY-RUN MODE ==='));
         p.log.info(pc.magenta(`Redirecting all settings output to: ${targetDir}\n`));
     }
@@ -107,7 +105,7 @@ export function injectVSCode() {
         hasCodeCLI = true;
     } catch (e) {
         warnNoCodeCLI = true;
-        if (!isTestMode) {
+        if (!isDryRun) {
             p.log.warn(pc.yellow('[VSCODE] "code" command line tool not found in PATH. Extensions will not be installed automatically.'));
         }
     }
@@ -131,7 +129,7 @@ export function injectVSCode() {
     });
 
     // 4. Inject Global/Default Extensions
-    if (hasCodeCLI || isTestMode) {
+    if (hasCodeCLI || isDryRun) {
         const globalExtensionsFile = path.join(PROJECT_ROOT, 'vscode', 'extensions.json');
         if (fs.existsSync(globalExtensionsFile)) {
             installExtensions(globalExtensionsFile);
@@ -157,53 +155,48 @@ export function injectVSCode() {
                 const storageFile = path.join(targetDir, 'globalStorage/storage.json');
                 let folderHash = null;
 
-                if (isTestMode) {
-                    // Generate a mock hash name for testing
-                    folderHash = `mock-hash-${profileName.toLowerCase()}`;
+                // Programmatic Profile Registration:
+                // Create storage.json if missing, or update it to register the profile.
+                let storage = { userDataProfiles: [] };
+                if (fs.existsSync(storageFile)) {
+                    try {
+                        storage = JSON.parse(fs.readFileSync(storageFile, 'utf8'));
+                    } catch (err) {
+                        p.log.error(pc.red(`[VSCODE] Failed to parse storage.json, creating a fresh one: ${err.message}`));
+                    }
+                }
+
+                if (!storage.userDataProfiles) {
+                    storage.userDataProfiles = [];
+                }
+
+                const registeredProfiles = storage.userDataProfiles;
+                const foundProfile = registeredProfiles.find(p => p.name === profileName);
+
+                if (foundProfile) {
+                    folderHash = foundProfile.location;
                 } else {
-                    // Programmatic Profile Registration:
-                    // Create storage.json if missing, or update it to register the profile.
-                    let storage = { userDataProfiles: [] };
-                    if (fs.existsSync(storageFile)) {
-                        try {
-                            storage = JSON.parse(fs.readFileSync(storageFile, 'utf8'));
-                        } catch (err) {
-                            p.log.error(pc.red(`[VSCODE] Failed to parse storage.json, creating a fresh one: ${err.message}`));
+                    // Generate a unique 8-character hex hash matching VS Code conventions (prefixed with '-')
+                    const randomHash = '-' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16);
+                    folderHash = randomHash;
+
+                    registeredProfiles.push({
+                        location: folderHash,
+                        name: profileName,
+                        useDefaultFlags: {
+                            settings: true,
+                            snippets: true,
+                            keybindings: true
                         }
-                    }
+                    });
 
-                    if (!storage.userDataProfiles) {
-                        storage.userDataProfiles = [];
-                    }
-
-                    const registeredProfiles = storage.userDataProfiles;
-                    const foundProfile = registeredProfiles.find(p => p.name === profileName);
-
-                    if (foundProfile) {
-                        folderHash = foundProfile.location;
-                    } else {
-                        // Generate a unique 8-character hex hash matching VS Code conventions (prefixed with '-')
-                        const randomHash = '-' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16);
-                        folderHash = randomHash;
-
-                        registeredProfiles.push({
-                            location: folderHash,
-                            name: profileName,
-                            useDefaultFlags: {
-                                settings: true,
-                                snippets: true,
-                                keybindings: true
-                            }
-                        });
-
-                        try {
-                            // Ensure globalStorage directory exists
-                            fs.mkdirSync(path.dirname(storageFile), { recursive: true });
-                            fs.writeFileSync(storageFile, JSON.stringify(storage, null, 4), 'utf8');
-                            p.log.success(pc.green(`[VSCODE] Registered new profile "${profileName}" in storage.json`));
-                        } catch (err) {
-                            p.log.error(pc.red(`[VSCODE] Failed to update storage.json: ${err.message}`));
-                        }
+                    try {
+                        // Ensure globalStorage directory exists
+                        fs.mkdirSync(path.dirname(storageFile), { recursive: true });
+                        fs.writeFileSync(storageFile, JSON.stringify(storage, null, 4), 'utf8');
+                        p.log.success(pc.green(`[VSCODE] Registered new profile "${profileName}" in storage.json`));
+                    } catch (err) {
+                        p.log.error(pc.red(`[VSCODE] Failed to update storage.json: ${err.message}`));
                     }
                 }
 
@@ -229,7 +222,7 @@ export function injectVSCode() {
                 }
 
                 // D. Install extensions for this profile
-                if (hasCodeCLI || isTestMode) {
+                if (hasCodeCLI || isDryRun) {
                     const profileExtensionsFile = path.join(profilesSourceDir, profileName, 'extensions.json');
                     if (fs.existsSync(profileExtensionsFile)) {
                         installExtensions(profileExtensionsFile, profileName);
