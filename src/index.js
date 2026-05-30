@@ -8,7 +8,7 @@ import { injectAntigravity } from './modules/antigravity.js';
 
 
 async function main() {
-    console.clear();
+    process.stdout.write('\x1Bc');
 
     // hearder
     p.intro(pc.cyan('// IMPORT PAPANGKORN SETTINGS //'));
@@ -70,8 +70,6 @@ async function main() {
             'VS CODE CLI PATH SETUP REQUIRED'
         );
     }
-
-    p.outro(pc.gray('// ALL INJECTION PROTOCOLS EXECUTED SUCCESSFULLY.'));
 }
 
 main().catch(console.error);
