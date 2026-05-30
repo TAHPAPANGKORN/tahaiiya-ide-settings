@@ -15,7 +15,7 @@ npx TAHPAPANGKORN/tahaiiya-ide-settings
 
 - ### if you don't have nodejs, you can use this command
 ```bash
-curl -fsSL https://raw.githubusercontent.com/TAHPAPANGKORN/tahaiiya-ide-settings/main/script/install.sh | bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/TAHPAPANGKORN/tahaiiya-ide-settings/main/script/install.sh)"
 ```
 
 - ### export
