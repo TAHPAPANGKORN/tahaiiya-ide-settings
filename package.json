@@ -1,6 +1,6 @@
 {
   "name": "editor-settings",
-  "version": "1.1.4",
+  "version": "1.2.0",
   "description": "ide settings",
   "main": "src/index.js",
   "type": "module",
@@ -8,8 +8,7 @@
     "antigravity": "./src/index.js"
   },
   "scripts": {
-    "start": "node src/index.js",
-    "test": "DRY_RUN=true VSCODE_TARGET_DIR=test/test-output/Code/User node src/index.js"
+    "start": "node src/index.js"
   },
   "files": [
     "src",

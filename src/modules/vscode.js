@@ -14,8 +14,7 @@ const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, '../../config');
 const HOME = process.env.HOME;
 
-// Detect if dry-run mode is enabled
-const isDryRun = process.env.DRY_RUN === 'true';
+
 
 // Live binding export to indicate if the code CLI warning should be shown post-install
 export let warnNoCodeCLI = false;
@@ -23,11 +22,11 @@ export let warnNoCodeCLI = false;
 // helper to install extensions from a JSON list (from VS Code's extensions.json)
 async function installExtensions(extensionsFilePath, profileName = null) {
     if (!fs.existsSync(extensionsFilePath)) return;
-    
+
     try {
         const fileContent = fs.readFileSync(extensionsFilePath, 'utf8');
         const parsed = JSON.parse(fileContent);
-        
+
         if (!Array.isArray(parsed)) {
             p.log.warn(pc.yellow(`[VSCODE] Invalid format in: ${extensionsFilePath}. Expected a JSON array.`));
             return;
@@ -37,7 +36,7 @@ async function installExtensions(extensionsFilePath, profileName = null) {
         let extensions = parsed
             .map(item => item?.identifier?.id)
             .filter(id => typeof id === 'string' && id.length > 0);
-            
+
         // If we are installing for a profile, also merge the global extensions!
         if (profileName) {
             const globalExtensionsFile = path.join(PROJECT_ROOT, 'vscode', 'extensions.json');
@@ -49,7 +48,7 @@ async function installExtensions(extensionsFilePath, profileName = null) {
                         const globalExts = globalParsed
                             .map(item => item?.identifier?.id)
                             .filter(id => typeof id === 'string' && id.length > 0);
-                        
+
                         // Merge and de-duplicate
                         extensions = [...new Set([...globalExts, ...extensions])];
                     }
@@ -58,31 +57,19 @@ async function installExtensions(extensionsFilePath, profileName = null) {
                 }
             }
         }
-            
+
         if (extensions.length === 0) return;
-        
+
         const label = profileName ? `profile "${profileName}"` : 'Default profile';
-        const actionLabel = isDryRun ? 'Simulating extension installation' : 'Installing extensions';
-        
+        const actionLabel = 'Installing extensions';
+
         const s = p.spinner();
         s.start(`${actionLabel} for ${label}...`);
-        
+
         let installedCount = 0;
         let failedCount = 0;
-        
-        if (isDryRun) {
-            for (let i = 0; i < extensions.length; i++) {
-                const ext = extensions[i];
-                const percent = Math.min(100, Math.round(((i + 1) / extensions.length) * 100));
-                const filledLength = Math.round((percent / 100) * 15);
-                const emptyLength = 15 - filledLength;
-                const progressBar = pc.green('█'.repeat(filledLength)) + pc.gray('░'.repeat(emptyLength));
-                s.message(`${actionLabel} for ${label} [${progressBar}] ${percent}% | ${ext}`);
-                p.log.info(pc.yellow(`[DRY-RUN] Would install extension: ${ext}`));
-                installedCount++;
-            }
-            s.stop(pc.green(`Simulated extension installation for ${label} (${installedCount} extensions).`));
-        } else {
+
+        {
             // Spawn all installs concurrently (fast), each process resolves its own
             // Promise and increments a shared counter when done → accurate progress %.
             let completedCount = 0;
@@ -154,8 +141,6 @@ export function copySettings(sourceDir, targetDir, label = 'Global') {
         } catch (err) {
             p.log.error(pc.red(`[VSCODE] Failed to copy ${label} settings.json: ${err.message}`));
         }
-    } else {
-        p.log.warn(pc.yellow(`[VSCODE] ${label} settings.json -> NOT FOUND in repository`));
     }
 }
 
@@ -170,8 +155,6 @@ export function copyKeybindings(sourceDir, targetDir, label = 'Global') {
         } catch (err) {
             p.log.error(pc.red(`[VSCODE] Failed to copy ${label} keybindings.json: ${err.message}`));
         }
-    } else {
-        p.log.warn(pc.yellow(`[VSCODE] ${label} keybindings.json -> NOT FOUND in repository`));
     }
 }
 
@@ -186,8 +169,6 @@ export function copySnippets(sourceDir, targetDir, label = 'Global') {
         } catch (err) {
             p.log.error(pc.red(`[VSCODE] Failed to copy ${label} snippets: ${err.message}`));
         }
-    } else {
-        p.log.warn(pc.yellow(`[VSCODE] ${label} snippets -> NOT FOUND in repository`));
     }
 }
 
@@ -295,7 +276,7 @@ export async function injectCustomProfiles(targetDir, hasCodeCLI, opts) {
         }
 
         // Install profile extensions
-        if (opts.extensions && (hasCodeCLI || isDryRun)) {
+        if (opts.extensions && hasCodeCLI) {
             const profileExtensionsFile = path.join(profilesSourceDir, profileName, 'extensions.json');
             if (fs.existsSync(profileExtensionsFile)) {
                 await installExtensions(profileExtensionsFile, profileName);
@@ -317,7 +298,7 @@ export async function injectVSCode(options = {}) {
     };
 
     // 0. OS Compatibility Check
-    if (process.platform !== 'darwin' && !isDryRun) {
+    if (process.platform !== 'darwin') {
         p.log.warn(pc.yellow(`[VSCODE] Warning: This script is optimized for macOS. Platform detected: ${process.platform}. Paths and permissions may differ.`));
     }
 
@@ -328,11 +309,6 @@ export async function injectVSCode(options = {}) {
 
     // 1. Determine target directory based on mode
     const targetDir = process.env.VSCODE_TARGET_DIR || path.join(HOME, 'Library/Application Support/Code/User');
-
-    if (isDryRun) {
-        p.log.info(pc.magenta('\n=== RUNNING IN SAFE TEST / DRY-RUN MODE ==='));
-        p.log.info(pc.magenta(`Redirecting all settings output to: ${targetDir}\n`));
-    }
 
     if (!fs.existsSync(targetDir)) {
         p.log.warn(pc.yellow(`Target directory not found. Creating: ${targetDir}`));
@@ -346,9 +322,7 @@ export async function injectVSCode(options = {}) {
         hasCodeCLI = true;
     } catch (e) {
         warnNoCodeCLI = true;
-        if (!isDryRun) {
-            p.log.warn(pc.yellow('[VSCODE] "code" command line tool not found in PATH. Extensions will not be installed automatically.'));
-        }
+        p.log.warn(pc.yellow('[VSCODE] "code" command line tool not found in PATH. Extensions will not be installed automatically.'));
     }
 
     // 3. Inject Global/Default settings, keybindings, and snippets
@@ -365,12 +339,10 @@ export async function injectVSCode(options = {}) {
     }
 
     // 4. Inject Global/Default Extensions
-    if (opts.extensions && (hasCodeCLI || isDryRun)) {
+    if (opts.extensions && hasCodeCLI) {
         const globalExtensionsFile = path.join(PROJECT_ROOT, 'vscode', 'extensions.json');
         if (fs.existsSync(globalExtensionsFile)) {
             await installExtensions(globalExtensionsFile);
-        } else {
-            p.log.warn(pc.yellow('[VSCODE] Global extensions.json -> NOT FOUND in repository'));
         }
     }
 
