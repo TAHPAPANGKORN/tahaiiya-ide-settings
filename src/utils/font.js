@@ -7,8 +7,6 @@ import os from 'os';
 
 const HOME = process.env.HOME || os.homedir();
 
-const isDryRun = process.env.DRY_RUN === 'true';
-
 // helper to install FiraCode Nerd Font Mono on macOS
 export function installFont() {
     const fontsDir = path.join(HOME, 'Library/Fonts');
@@ -28,6 +26,8 @@ export function installFont() {
     const s = p.spinner();
     s.start('Installing FiraCode Nerd Font Mono...');
 
+    let spinnerStopped = false;
+
     // Try Homebrew Cask first
     try {
         execSync('which brew', { stdio: 'ignore' });
@@ -36,19 +36,24 @@ export function installFont() {
         const checkBrew = execSync('brew list --cask', { encoding: 'utf8' });
         if (checkBrew.includes('font-fira-code-nerd-font')) {
             s.stop(pc.green('FiraCode Nerd Font Mono is already installed via Homebrew.'));
+            spinnerStopped = true;
             return;
         }
 
-        s.message('Installing font-fira-code-nerd-font via Homebrew Cask...');
-        if (isDryRun) {
-            p.log.info(pc.yellow('[DRY-RUN] Would run: brew install --cask font-fira-code-nerd-font'));
-        } else {
-            execSync('brew install --cask font-fira-code-nerd-font', { stdio: 'ignore' });
-        }
-        s.stop(pc.green(isDryRun ? 'Simulated Homebrew font installation.' : 'FiraCode Nerd Font Mono installed via Homebrew Cask.'));
+        s.stop(pc.cyan('Homebrew found. Preparing to install font-fira-code-nerd-font...'));
+        spinnerStopped = true;
+
+        p.log.info(pc.cyan('Installing font-fira-code-nerd-font via Homebrew Cask. Progress will be displayed below:'));
+        execSync('brew install --cask font-fira-code-nerd-font', { stdio: 'inherit' });
+        p.log.success(pc.green('FiraCode Nerd Font Mono installed via Homebrew Cask.'));
     } catch (e) {
         // Fallback: Direct download using curl
-        s.message('Homebrew not found or cask failed. Downloading font files directly...');
+        const fallbackSpinner = spinnerStopped ? p.spinner() : s;
+        if (spinnerStopped) {
+            fallbackSpinner.start('Homebrew cask installation failed. Downloading font files directly...');
+        } else {
+            fallbackSpinner.message('Homebrew not found or cask failed. Downloading font files directly...');
+        }
         
         let successCount = 0;
         fontFiles.forEach(file => {
@@ -58,22 +63,17 @@ export function installFont() {
                 return;
             }
             try {
-                if (isDryRun) {
-                    p.log.info(pc.yellow(`[DRY-RUN] Would download font from ${file.url} to ${destPath}`));
-                    successCount++;
-                } else {
-                    execSync(`curl -fsSL "${file.url}" -o "${destPath}"`, { stdio: 'ignore' });
-                    successCount++;
-                }
+                execSync(`curl -fsSL "${file.url}" -o "${destPath}"`, { stdio: 'ignore' });
+                successCount++;
             } catch (err) {
                 p.log.warn(pc.yellow(`Failed to download font style: ${file.name}`));
             }
         });
         
         if (successCount === fontFiles.length) {
-            s.stop(pc.green(isDryRun ? 'Simulated FiraCode Nerd Font Mono installation.' : 'FiraCode Nerd Font Mono successfully installed.'));
+            fallbackSpinner.stop(pc.green('FiraCode Nerd Font Mono successfully installed.'));
         } else {
-            s.stop(pc.red('Failed to install FiraCode Nerd Font Mono.'));
+            fallbackSpinner.stop(pc.red('Failed to install FiraCode Nerd Font Mono.'));
         }
     }
 }
