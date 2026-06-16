@@ -4,13 +4,27 @@ import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
+import os from 'os';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PROJECT_ROOT   = path.resolve(__dirname, '../../config');
-const HOME           = process.env.HOME;
-const VSCODE_USER    = path.join(HOME, 'Library/Application Support/Code/User');
+const HOME           = process.env.HOME || os.homedir();
+const VSCODE_USER    = process.env.VSCODE_TARGET_DIR || (
+    process.platform === 'win32'
+        ? path.join(process.env.APPDATA || path.join(HOME, 'AppData/Roaming'), 'Code/User')
+        : path.join(HOME, 'Library/Application Support/Code/User')
+);
+const getKeybindingsFilename = () => {
+    if (process.platform === 'win32') {
+        return 'keybindings-windows.jsonc';
+    } else if (process.platform === 'darwin') {
+        return 'keybindings-macos.jsonc';
+    } else {
+        return 'keybindings.jsonc';
+    }
+};
 
 // Default destination — can be overridden at call-time
 const DEFAULT_DEST_VSCODE = path.join(PROJECT_ROOT, 'vscode');
@@ -50,7 +64,7 @@ function listExtensions(profileName = null) {
         const args = ['code', '--list-extensions'];
         if (profileName) args.push('--profile', profileName);
         const raw = execSync(args.join(' '), { encoding: 'utf8' });
-        return raw.trim().split('\n').filter(Boolean);
+        return raw.trim().split(/\r?\n/).map(line => line.trim()).filter(Boolean);
     } catch {
         return null; // code CLI not available
     }
@@ -84,12 +98,13 @@ function exportGlobalSettings(opts, destDir) {
     }
 
     if (opts.keybindings) {
+        const keybindingsFile = getKeybindingsFilename();
         const ok = copyFile(
             path.join(VSCODE_USER, 'keybindings.json'),
-            path.join(destDir, 'keybindings.json'),
+            path.join(destDir, keybindingsFile),
         );
         p.log[ok ? 'success' : 'warn'](
-            ok ? pc.green('[EXPORT] keybindings.json → OK') : pc.yellow('[EXPORT] keybindings.json → not found'),
+            ok ? pc.green(`[EXPORT] keybindings.json → ${keybindingsFile} OK`) : pc.yellow('[EXPORT] keybindings.json → not found'),
         );
     }
 
@@ -152,14 +167,22 @@ function exportProfiles(opts, destDir) {
         const entries = fs.readdirSync(srcProfileDir, { withFileTypes: true });
 
         for (const entry of entries) {
-            const srcPath  = path.join(srcProfileDir, entry.name);
-            const destPath = path.join(destProfileDir, entry.name);
+            let entryName = entry.name;
+            let destName = entry.name;
 
-            // Apply opt filters
-            if (entry.name === 'settings.json'    && !opts.settings)    continue;
-            if (entry.name === 'keybindings.json' && !opts.keybindings) continue;
-            if (entry.name === 'snippets'          && !opts.snippets)    continue;
-            if (entry.name === 'extensions.json'   && !opts.extensions)  continue;
+            if (entry.name === 'keybindings.json') {
+                if (!opts.keybindings) continue;
+                destName = getKeybindingsFilename();
+            } else if (entry.name === 'settings.json' && !opts.settings) {
+                continue;
+            } else if (entry.name === 'snippets' && !opts.snippets) {
+                continue;
+            } else if (entry.name === 'extensions.json' && !opts.extensions) {
+                continue;
+            }
+
+            const srcPath  = path.join(srcProfileDir, entryName);
+            const destPath = path.join(destProfileDir, destName);
 
             try {
                 if (entry.isDirectory()) {
@@ -167,9 +190,9 @@ function exportProfiles(opts, destDir) {
                 } else {
                     copyFile(srcPath, destPath);
                 }
-                p.log.success(pc.green(`[EXPORT] ${profileName}/${entry.name} → OK`));
+                p.log.success(pc.green(`[EXPORT] ${profileName}/${destName} → OK`));
             } catch (err) {
-                p.log.error(pc.red(`[EXPORT] ${profileName}/${entry.name} → FAILED: ${err.message}`));
+                p.log.error(pc.red(`[EXPORT] ${profileName}/${destName} → FAILED: ${err.message}`));
             }
         }
     }
@@ -187,8 +210,8 @@ export async function exportVSCode(options = {}, destDir = DEFAULT_DEST_VSCODE) 
         ...options,
     };
 
-    if (process.platform !== 'darwin') {
-        p.log.warn(pc.yellow('[EXPORT] Warning: This script is optimized for macOS.'));
+    if (process.platform !== 'darwin' && process.platform !== 'win32') {
+        p.log.warn(pc.yellow('[EXPORT] Warning: This script is optimized for macOS and Windows 11.'));
     }
 
     if (!fs.existsSync(VSCODE_USER)) {

@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+if (process.platform === 'win32' && process.env.HOME) {
+    delete process.env.HOME;
+}
+
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
 import figlet from 'figlet';

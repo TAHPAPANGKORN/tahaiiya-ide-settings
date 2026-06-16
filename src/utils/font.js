@@ -9,6 +9,10 @@ const HOME = process.env.HOME || os.homedir();
 
 // helper to install FiraCode Nerd Font Mono on macOS
 export function installFont() {
+    if (process.platform !== 'darwin') {
+        p.log.warn(pc.yellow(`[FONT] Font auto-installation is only supported on macOS. Please manually install FiraCode Nerd Font on ${process.platform === 'win32' ? 'Windows' : 'Linux'} to ensure the IDE displays correctly.`));
+        return;
+    }
     const fontsDir = path.join(HOME, 'Library/Fonts');
     fs.mkdirSync(fontsDir, { recursive: true });
 

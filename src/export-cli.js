@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+if (process.platform === 'win32' && process.env.HOME) {
+    delete process.env.HOME;
+}
+
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';

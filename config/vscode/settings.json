@@ -1,5 +1,7 @@
 {
-  // Terminal Settings
+  "files.associations": {
+    "**/snippets/**/*.json": "jsonc"
+  },
   "terminal.integrated.fontFamily": "FiraCode Nerd Font Mono",
   "terminal.integrated.fontSize": 12,
   "terminal.integrated.cursorBlinking": true,
@@ -8,7 +10,6 @@
   "terminal.integrated.defaultProfile.windows": "Windows PowerShell",
   "terminal.integrated.smoothScrolling": true,
 
-  // Editor Settings
   "editor.fontSize": 14,
   "editor.semanticHighlighting.enabled": true,
   "editor.stickyScroll.enabled": false,
@@ -19,17 +20,14 @@
   "editor.folding": true,
   "editor.showFoldingControls": "mouseover",
   "editor.guides.indentation": true,
-  //editor.cursor
   "editor.cursorSmoothCaretAnimation": "on",
   "editor.cursorWidth": 2,
   "editor.cursorBlinking": "smooth",
-  //editor.scroll bar
   "editor.scrollbar.horizontal": "hidden",
   "editor.scrollbar.vertical": "hidden",
   "editor.scrollbar.verticalScrollbarSize": 0,
   "editor.smoothScrolling": true,
 
-  // Window Settings
   "window.newWindowProfile": "Default",
   "window.commandCenter": false,
   "window.customTitleBarVisibility": "windowed",
@@ -45,24 +43,20 @@
   "workbench.tree.indent": 10,
   "files.autoSave": "afterDelay",
 
-  // side bar
   "workbench.tree.renderIndentGuides": "none",
   "explorer.compactFolders": false,
   "material-icon-theme.hidesExplorerArrows": true,
 
-  // Extensions Configuration
   "code-runner.runInTerminal": true,
   "code-runner.saveFileBeforeRun": true,
   "codesnap.containerPadding": "0em",
   "vscode_custom_css.imports": [
-    "file:///c:/Users/tahza/.vscode/extensions/brandonkirbyson.vscode-animations-2.0.3/dist/updateHandler.js",
+    "file:///c:/Users/tahza/.vscode/extensions/brandonkirbyson.vscode-animations-2.0.3/dist/updateHandler.js"
   ],
 
-  // Git Settings
   "git.suggestSmartCommit": false,
   "git.openRepositoryInParentFolders": "always",
 
-  // Spell Check Settings
   "cSpell.userWords": [
     "codesnap",
     "highlightedyank",
@@ -70,92 +64,87 @@
     "papangkorn",
     "pitjawong",
     "tabnine",
-    "whichkey",
+    "whichkey"
   ],
   "cSpell.customDictionaries": {
     "custom-dictionary-user": {
       "name": "custom-dictionary-user",
       "path": "~/.cspell/custom-dictionary-user.txt",
       "addWords": true,
-      "scope": "user",
-    },
+      "scope": "user"
+    }
   },
   "cSpell.ignoreRegExpList": ["/[^\\x00-\\x7F]+/"],
   "cSpell.ignoreWords": ["Burapha", "SMOIF", "sersit", "sonner"],
 
-  // custom language setting
   "[jsonc]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.defaultFormatter": "vscode.json-language-features"
   },
   "[java]": {
     "editor.defaultFormatter": "redhat.java",
-    "editor.guides.indentation": false,
+    "editor.guides.indentation": false
   },
   "[typescript]": {
-    "editor.defaultFormatter": "vscode.typescript-language-features",
+    "editor.defaultFormatter": "vscode.typescript-language-features"
   },
   "[python]": {
     "editor.renderWhitespace": "all",
-    "editor.guides.indentation": true,
+    "editor.guides.indentation": true
   },
   "[html]": {
-    "editor.guides.indentation": true,
+    "editor.guides.indentation": true
   },
   "[tailwindcss]": {
-    "editor.guides.indentation": true,
+    "editor.guides.indentation": true
   },
   "[javascriptreact]": {
-    "editor.guides.indentation": true,
+    "editor.guides.indentation": true
   },
   "[php]": {
-    "editor.guides.indentation": true,
+    "editor.guides.indentation": true
   },
 
-  // LeetCode
   "leetcode.workspaceFolder": "C:\\Users\\tahza\\.leetcode",
   "leetcode.hint.commandShortcut": false,
   "leetcode.hint.configWebviewMarkdown": false,
 
-  // Vim Configuration
   "vim.useSystemClipboard": true,
   "vim.hlsearch": true,
   "vim.useCtrlKeys": true,
   "vim.foldfix": true,
 
-  // Vim keybinding
   "vim.handleKeys": {
-    "<C-s>": false,
+    "<C-s>": false
   },
 
   "vim.insertModeKeyBindings": [
     {
       "before": ["j", "j"],
-      "after": ["<Esc>"],
-    },
+      "after": ["<Esc>"]
+    }
   ],
   "vim.visualModeKeyBindings": [
     {
       "before": [">"],
-      "commands": ["editor.action.indentLines"],
+      "commands": ["editor.action.indentLines"]
     },
     {
       "before": ["<"],
-      "commands": ["editor.action.outdentLines"],
-    },
+      "commands": ["editor.action.outdentLines"]
+    }
   ],
 
   "vim.normalModeKeyBindings": [
     {
       "before": [">"],
-      "commands": ["editor.action.indentLines"],
+      "commands": ["editor.action.indentLines"]
     },
     {
       "before": ["<"],
-      "commands": ["editor.action.outdentLines"],
-    },
+      "commands": ["editor.action.outdentLines"]
+    }
   ],
 
-  // Vim appearance settings
   "editor.cursorSurroundingLines": 10,
   "vim.smartRelativeLine": true,
   "vim.highlightedyank.enable": true,
@@ -233,18 +222,17 @@
     "terminal.ansiBrightCyan": "#98be82",
     "terminal.ansiBrightWhite": "#e8dbb6"
   },
-  // which key settings
   "vim.normalModeKeyBindingsNonRecursive": [
     {
       "before": ["<space>"],
-      "commands": ["whichkey.show"],
-    },
+      "commands": ["whichkey.show"]
+    }
   ],
   "vim.visualModeKeyBindingsNonRecursive": [
     {
       "before": ["<space>"],
-      "commands": ["whichkey.show"],
-    },
+      "commands": ["whichkey.show"]
+    }
   ],
   "whichkey.useFullWidthCharacters": true,
   "whichkey.bindingOverrides": [],
@@ -253,31 +241,31 @@
       "key": "/",
       "name": "[/] Fuzzy search in current editor",
       "type": "command",
-      "command": "fuzzySearch.activeTextEditor",
+      "command": "fuzzySearch.activeTextEditor"
     },
     {
       "key": "a",
       "name": "[A]ad editor to harpoon",
       "type": "command",
-      "command": "vscode-harpoon.addEditor",
+      "command": "vscode-harpoon.addEditor"
     },
     {
       "key": "e",
       "name": "[E]dit harpoon editors",
       "type": "command",
-      "command": "vscode-harpoon.editEditors",
+      "command": "vscode-harpoon.editEditors"
     },
     {
       "key": "f",
       "name": "[F]ormat Document",
       "type": "command",
-      "command": "editor.action.formatDocument",
+      "command": "editor.action.formatDocument"
     },
     {
       "key": "T",
       "name": "Open file [T]ree",
       "type": "command",
-      "command": "workbench.view.explorer",
+      "command": "workbench.view.explorer"
     },
     {
       "key": "s",
@@ -288,41 +276,40 @@
           "key": "h",
           "name": "[S]earch [H]arpoon Editors",
           "type": "command",
-          "command": "vscode-harpoon.editorQuickPick",
+          "command": "vscode-harpoon.editorQuickPick"
         },
         {
           "key": "p",
           "name": "[S]earch Command [P]alette",
           "type": "command",
-          "command": "workbench.action.showCommands",
+          "command": "workbench.action.showCommands"
         },
         {
           "key": "f",
           "name": "[S]earch [F]iles",
           "type": "command",
-          "command": "workbench.action.quickOpen",
+          "command": "workbench.action.quickOpen"
         },
         {
           "key": "k",
           "name": "[S]earch [K]eybindings",
           "type": "command",
-          "command": "workbench.action.openGlobalKeybindings",
+          "command": "workbench.action.openGlobalKeybindings"
         },
         {
           "key": "e",
           "name": "[S]earch [E]xtensions",
           "type": "command",
-          "command": "workbench.view.extensions",
+          "command": "workbench.view.extensions"
         },
         {
           "key": ".",
           "name": "[S]earch Recent Files",
           "type": "command",
-          "command": "wokbench.action.openRecent",
-        },
-      ],
+          "command": "wokbench.action.openRecent"
+        }
+      ]
     },
-    // LSP
     {
       "key": "c",
       "name": "[C]ode",
@@ -332,9 +319,9 @@
           "key": "a",
           "name": "[C]ode [A]ctions",
           "type": "command",
-          "command": "editor.action.quickFix",
-        },
-      ],
+          "command": "editor.action.quickFix"
+        }
+      ]
     },
     {
       "key": "r",
@@ -345,27 +332,27 @@
           "key": "c",
           "name": "[R]efactor [C]ode",
           "type": "command",
-          "command": "editor.action.refactor",
+          "command": "editor.action.refactor"
         },
         {
           "key": "n",
           "name": "[R]e[N]ame Symbol",
           "type": "command",
-          "command": "editor.action.rename",
+          "command": "editor.action.rename"
         },
         {
           "key": "d",
           "name": "[R]un with [D]ebuging",
           "type": "command",
-          "command": "workbench.action.debug.start",
+          "command": "workbench.action.debug.start"
         },
         {
           "key": "r",
           "name": "[R]un Without debugging",
           "type": "command",
-          "command": "workbench.action.debug.run",
-        },
-      ],
+          "command": "workbench.action.debug.run"
+        }
+      ]
     },
     {
       "key": "g",
@@ -376,33 +363,33 @@
           "key": "d",
           "name": "[G]oto [D]efinition",
           "type": "command",
-          "command": "editor.revealDefinition",
+          "command": "editor.revealDefinition"
         },
         {
           "key": "r",
           "name": "[G]oto [R]eferences",
           "type": "command",
-          "command": "editor.action.goToReferences",
+          "command": "editor.action.goToReferences"
         },
         {
           "key": "I",
           "name": "[G]oto [I]mplementation",
           "type": "command",
-          "command": "editor.action.goToImplementation",
+          "command": "editor.action.goToImplementation"
         },
         {
           "key": "D",
           "name": "[G]oto [D]eclaration",
           "type": "command",
-          "command": "editor.action.revealDeclaration",
-        },
-      ],
+          "command": "editor.action.revealDeclaration"
+        }
+      ]
     },
     {
       "key": "D",
       "name": "Jump to Type [D]efinition",
       "type": "command",
-      "command": "editor.action.goToTypeDefinition",
+      "command": "editor.action.goToTypeDefinition"
     },
     {
       "key": "d",
@@ -413,20 +400,16 @@
           "key": "s",
           "name": "[D]ocument [S]ymbols",
           "type": "command",
-          "command": "workbench.action.gotoSymbol",
-        },
-      ],
+          "command": "workbench.action.gotoSymbol"
+        }
+      ]
     },
-
-    // quit tab
     {
       "key": "q",
       "name": "[Q]uit tab",
       "command": "workbench.action.closeActiveEditor",
-      "when": "editEditorsFocus",
+      "when": "editEditorsFocus"
     },
-
-    // change tab
     {
       "key": "w",
       "name": "[W]indow change",
@@ -437,33 +420,31 @@
           "name": "[W]indow right",
           "type": "command",
           "command": "workbench.action.navigateRight",
-          "args": { "to": "right" },
+          "args": { "to": "right" }
         },
         {
           "key": "h",
           "name": "[W]indow left",
           "type": "command",
           "command": "workbench.action.navigateLeft",
-          "args": { "to": "left" },
+          "args": { "to": "left" }
         },
         {
           "key": "k",
           "name": "[W]indow up",
           "type": "command",
           "command": "workbench.action.navigateUp",
-          "args": { "to": "up" },
+          "args": { "to": "up" }
         },
         {
           "key": "j",
           "name": "[W]indow down",
           "type": "command",
           "command": "workbench.action.navigateDown",
-          "args": { "to": "down" },
-        },
-      ],
-      // end change tab
-    },
-    // end workbench
+          "args": { "to": "down" }
+        }
+      ]
+    }
   ],
   "terminal.integrated.env.osx": {
     "Q_NEW_SESSION": "1"
@@ -472,14 +453,14 @@
   "editor.accessibilitySupport": "off",
   "codesnap.backgroundColor": "#000000",
   "[typescriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "typescript.updateImportsOnFileMove.enabled": "always",
   "liveServer.settings.donotShowInfoMsg": true,
   "reactSnippets.settings.importReactOnTop": false,
   "workbench.secondarySideBar.defaultVisibility": "hidden",
   "github.copilot.enable": {
-    "GitHub Copilot: Disable Completions": false,
+    "GitHub Copilot: Disable Completions": false
   },
   "github.copilot.renameSuggestions.triggerAutomatically": false,
   "github.copilot.nextEditSuggestions.enabled": true,
@@ -509,5 +490,5 @@
     "/var/folders/n6/45sxpy4d789404vyd9jp21bh0000gn/T/postman-http-request-pre-request.instructions.md": true
   },
   "workbench.colorTheme": "Dark Modern",
-  "workbench.iconTheme": "material-icon-theme",
-} // end
+  "workbench.iconTheme": "material-icon-theme"
+}

@@ -4,6 +4,7 @@ import { execSync, spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
+import os from 'os';
 import { copySync } from '../utils/fs.js';
 import { installFont } from '../utils/font.js';
 
@@ -12,7 +13,17 @@ const __dirname = path.dirname(__filename);
 
 // Project root is two levels up from src/modules/
 const PROJECT_ROOT = path.resolve(__dirname, '../../config');
-const HOME = process.env.HOME;
+const HOME = process.env.HOME || os.homedir();
+
+const getKeybindingsFilename = () => {
+    if (process.platform === 'win32') {
+        return 'keybindings-windows.jsonc';
+    } else if (process.platform === 'darwin') {
+        return 'keybindings-macos.jsonc';
+    } else {
+        return 'keybindings.jsonc';
+    }
+};
 
 
 
@@ -87,40 +98,40 @@ async function installExtensions(extensionsFilePath, profileName = null) {
 
             updateProgress();
 
-            await Promise.all(
-                extensions.map((ext) => {
-                    const args = ['--install-extension', ext];
-                    if (profileName) args.unshift('--profile', profileName);
+            for (const ext of extensions) {
+                const args = ['--install-extension', ext];
+                if (profileName) args.unshift('--profile', profileName);
 
-                    return new Promise((resolve) => {
-                        const child = spawn('code', args);
+                updateProgress(ext);
 
-                        let output = '';
-                        child.stdout.on('data', (d) => { output += d.toString(); });
-                        child.stderr.on('data', (d) => { output += d.toString(); });
+                await new Promise((resolve) => {
+                    const child = spawn('code', args, { shell: process.platform === 'win32' });
 
-                        child.on('close', () => {
-                            if (/successfully installed|already installed/i.test(output)) {
-                                installedCount++;
-                            } else if (/failed installing|not found/i.test(output)) {
-                                failedCount++;
-                            } else {
-                                installedCount++; // treat ambiguous as success
-                            }
-                            completedCount++;
-                            updateProgress();
-                            resolve();
-                        });
+                    let output = '';
+                    child.stdout.on('data', (d) => { output += d.toString(); });
+                    child.stderr.on('data', (d) => { output += d.toString(); });
 
-                        child.on('error', () => {
+                    child.on('close', () => {
+                        if (/successfully installed|already installed/i.test(output)) {
+                            installedCount++;
+                        } else if (/failed installing|not found/i.test(output)) {
                             failedCount++;
-                            completedCount++;
-                            updateProgress();
-                            resolve();
-                        });
+                        } else {
+                            installedCount++; // treat ambiguous as success
+                        }
+                        completedCount++;
+                        updateProgress();
+                        resolve();
                     });
-                })
-            );
+
+                    child.on('error', () => {
+                        failedCount++;
+                        completedCount++;
+                        updateProgress();
+                        resolve();
+                    });
+                });
+            }
 
             const completionMessage = `Completed installing extensions for ${label} (${installedCount} success, ${failedCount} failed).`;
             s.stop(pc.green(completionMessage));
@@ -146,7 +157,21 @@ export function copySettings(sourceDir, targetDir, label = 'Global') {
 
 // Copies keybindings.json from source to target directory.
 export function copyKeybindings(sourceDir, targetDir, label = 'Global') {
-    const sourcePath = path.join(sourceDir, 'keybindings.json');
+    const keybindingsFile = getKeybindingsFilename();
+    let sourcePath = path.join(sourceDir, keybindingsFile);
+    if (!fs.existsSync(sourcePath)) {
+        // Fallback to the platform-specific .json file
+        const cleanName = keybindingsFile.replace(/\.jsonc$/, '.json');
+        sourcePath = path.join(sourceDir, cleanName);
+        if (!fs.existsSync(sourcePath)) {
+            // Fallback to generic keybindings.jsonc
+            sourcePath = path.join(sourceDir, 'keybindings.jsonc');
+            if (!fs.existsSync(sourcePath)) {
+                // Fallback to generic keybindings.json
+                sourcePath = path.join(sourceDir, 'keybindings.json');
+            }
+        }
+    }
     const targetPath = path.join(targetDir, 'keybindings.json');
     if (fs.existsSync(sourcePath)) {
         try {
@@ -263,7 +288,7 @@ export async function injectCustomProfiles(targetDir, hasCodeCLI, opts) {
             // Also copy other non-special files that might exist in the profile folder (excluding special config files)
             try {
                 fs.readdirSync(sourceProfileDir).forEach(item => {
-                    if (['settings.json', 'keybindings.json', 'snippets', 'extensions.json'].includes(item)) {
+                    if (['settings.json', 'keybindings.json', 'keybindings-macos.json', 'keybindings-windows.json', 'snippets', 'extensions.json'].includes(item)) {
                         return;
                     }
                     const sourcePath = path.join(sourceProfileDir, item);
@@ -280,6 +305,11 @@ export async function injectCustomProfiles(targetDir, hasCodeCLI, opts) {
             const profileExtensionsFile = path.join(profilesSourceDir, profileName, 'extensions.json');
             if (fs.existsSync(profileExtensionsFile)) {
                 await installExtensions(profileExtensionsFile, profileName);
+            } else {
+                const globalExtensionsFile = path.join(PROJECT_ROOT, 'vscode', 'extensions.json');
+                if (fs.existsSync(globalExtensionsFile)) {
+                    await installExtensions(globalExtensionsFile, profileName);
+                }
             }
         }
     }
@@ -298,8 +328,8 @@ export async function injectVSCode(options = {}) {
     };
 
     // 0. OS Compatibility Check
-    if (process.platform !== 'darwin') {
-        p.log.warn(pc.yellow(`[VSCODE] Warning: This script is optimized for macOS. Platform detected: ${process.platform}. Paths and permissions may differ.`));
+    if (process.platform !== 'darwin' && process.platform !== 'win32') {
+        p.log.warn(pc.yellow(`[VSCODE] Warning: This script is optimized for macOS and Windows 11. Platform detected: ${process.platform}. Paths and permissions may differ.`));
     }
 
     // 0.1 Install FiraCode Nerd Font Mono
@@ -308,7 +338,11 @@ export async function injectVSCode(options = {}) {
     }
 
     // 1. Determine target directory based on mode
-    const targetDir = process.env.VSCODE_TARGET_DIR || path.join(HOME, 'Library/Application Support/Code/User');
+    const targetDir = process.env.VSCODE_TARGET_DIR || (
+        process.platform === 'win32'
+            ? path.join(process.env.APPDATA || path.join(HOME, 'AppData/Roaming'), 'Code/User')
+            : path.join(HOME, 'Library/Application Support/Code/User')
+    );
 
     if (!fs.existsSync(targetDir)) {
         p.log.warn(pc.yellow(`Target directory not found. Creating: ${targetDir}`));
@@ -318,11 +352,18 @@ export async function injectVSCode(options = {}) {
     // 2. Check if code CLI is available
     let hasCodeCLI = false;
     try {
-        execSync('which code', { stdio: 'ignore' });
+        const cmd = process.platform === 'win32' ? 'where code' : 'which code';
+        execSync(cmd, { stdio: 'ignore' });
         hasCodeCLI = true;
     } catch (e) {
-        warnNoCodeCLI = true;
-        p.log.warn(pc.yellow('[VSCODE] "code" command line tool not found in PATH. Extensions will not be installed automatically.'));
+        // Fallback: try running `code --version` directly
+        try {
+            execSync('code --version', { stdio: 'ignore' });
+            hasCodeCLI = true;
+        } catch (err) {
+            warnNoCodeCLI = true;
+            p.log.warn(pc.yellow('[VSCODE] "code" command line tool not found in PATH. Extensions will not be installed automatically.'));
+        }
     }
 
     // 3. Inject Global/Default settings, keybindings, and snippets
