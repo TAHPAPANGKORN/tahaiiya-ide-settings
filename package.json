@@ -1,6 +1,6 @@
 {
   "name": "tahaiiya-ide-settings",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "ide settings",
   "main": "src/index.js",
   "type": "module",

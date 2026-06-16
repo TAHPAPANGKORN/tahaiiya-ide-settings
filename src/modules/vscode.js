@@ -98,40 +98,40 @@ async function installExtensions(extensionsFilePath, profileName = null) {
 
             updateProgress();
 
-            await Promise.all(
-                extensions.map((ext) => {
-                    const args = ['--install-extension', ext];
-                    if (profileName) args.unshift('--profile', profileName);
+            for (const ext of extensions) {
+                const args = ['--install-extension', ext];
+                if (profileName) args.unshift('--profile', profileName);
 
-                    return new Promise((resolve) => {
-                        const child = spawn('code', args, { shell: process.platform === 'win32' });
+                updateProgress(ext);
 
-                        let output = '';
-                        child.stdout.on('data', (d) => { output += d.toString(); });
-                        child.stderr.on('data', (d) => { output += d.toString(); });
+                await new Promise((resolve) => {
+                    const child = spawn('code', args, { shell: process.platform === 'win32' });
 
-                        child.on('close', () => {
-                            if (/successfully installed|already installed/i.test(output)) {
-                                installedCount++;
-                            } else if (/failed installing|not found/i.test(output)) {
-                                failedCount++;
-                            } else {
-                                installedCount++; // treat ambiguous as success
-                            }
-                            completedCount++;
-                            updateProgress();
-                            resolve();
-                        });
+                    let output = '';
+                    child.stdout.on('data', (d) => { output += d.toString(); });
+                    child.stderr.on('data', (d) => { output += d.toString(); });
 
-                        child.on('error', () => {
+                    child.on('close', () => {
+                        if (/successfully installed|already installed/i.test(output)) {
+                            installedCount++;
+                        } else if (/failed installing|not found/i.test(output)) {
                             failedCount++;
-                            completedCount++;
-                            updateProgress();
-                            resolve();
-                        });
+                        } else {
+                            installedCount++; // treat ambiguous as success
+                        }
+                        completedCount++;
+                        updateProgress();
+                        resolve();
                     });
-                })
-            );
+
+                    child.on('error', () => {
+                        failedCount++;
+                        completedCount++;
+                        updateProgress();
+                        resolve();
+                    });
+                });
+            }
 
             const completionMessage = `Completed installing extensions for ${label} (${installedCount} success, ${failedCount} failed).`;
             s.stop(pc.green(completionMessage));
