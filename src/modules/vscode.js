@@ -15,6 +15,16 @@ const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, '../../config');
 const HOME = process.env.HOME || os.homedir();
 
+const getKeybindingsFilename = () => {
+    if (process.platform === 'win32') {
+        return 'keybindings-windows.jsonc';
+    } else if (process.platform === 'darwin') {
+        return 'keybindings-macos.jsonc';
+    } else {
+        return 'keybindings.jsonc';
+    }
+};
+
 
 
 // Live binding export to indicate if the code CLI warning should be shown post-install
@@ -147,7 +157,21 @@ export function copySettings(sourceDir, targetDir, label = 'Global') {
 
 // Copies keybindings.json from source to target directory.
 export function copyKeybindings(sourceDir, targetDir, label = 'Global') {
-    const sourcePath = path.join(sourceDir, 'keybindings.json');
+    const keybindingsFile = getKeybindingsFilename();
+    let sourcePath = path.join(sourceDir, keybindingsFile);
+    if (!fs.existsSync(sourcePath)) {
+        // Fallback to the platform-specific .json file
+        const cleanName = keybindingsFile.replace(/\.jsonc$/, '.json');
+        sourcePath = path.join(sourceDir, cleanName);
+        if (!fs.existsSync(sourcePath)) {
+            // Fallback to generic keybindings.jsonc
+            sourcePath = path.join(sourceDir, 'keybindings.jsonc');
+            if (!fs.existsSync(sourcePath)) {
+                // Fallback to generic keybindings.json
+                sourcePath = path.join(sourceDir, 'keybindings.json');
+            }
+        }
+    }
     const targetPath = path.join(targetDir, 'keybindings.json');
     if (fs.existsSync(sourcePath)) {
         try {
@@ -264,7 +288,7 @@ export async function injectCustomProfiles(targetDir, hasCodeCLI, opts) {
             // Also copy other non-special files that might exist in the profile folder (excluding special config files)
             try {
                 fs.readdirSync(sourceProfileDir).forEach(item => {
-                    if (['settings.json', 'keybindings.json', 'snippets', 'extensions.json'].includes(item)) {
+                    if (['settings.json', 'keybindings.json', 'keybindings-macos.json', 'keybindings-windows.json', 'snippets', 'extensions.json'].includes(item)) {
                         return;
                     }
                     const sourcePath = path.join(sourceProfileDir, item);

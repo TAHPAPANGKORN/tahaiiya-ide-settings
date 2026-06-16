@@ -31,14 +31,12 @@
     "command": "-list.toggleKeyboardNavigation",
     "when": "listFocus && listSupportsKeyboardNavigation && !inputFocus"
   },
-
   // ctrl+d find same word
-  {  
+  {
     "key": "ctrl-f",
     "command": "editor.action.addSelectionToNextFindMatch",
     "when": "(vim.mode == 'Normal' || vim.mode == 'Visual') && (editorTextFocus || !inputFocus)"
   },
-
   // terminal
   {
     "key": "ctrl+t",
@@ -79,7 +77,6 @@
     "command": "workbench.action.decreaseViewSize",
     "when": "terminalFocus"
   },
-
   // tab bar
   {
     "key": "tab",
@@ -91,7 +88,6 @@
     "command": "workbench.action.previousEditorInGroup",
     "when": "(vim.mode == 'Normal' || vim.mode == 'Visual') && (editorTextFocus || !inputFocus)"
   },
-
   // coding move
   {
     "key": "shift-k",
@@ -103,13 +99,11 @@
     "command": "editor.action.moveLinesDownAction",
     "when": "vim.mode != 'Insert' && editorTextFocus"
   },
-
   // Custom Bindings Added (+commands)
   {
     "key": "ctrl+shift+/",
     "command": "workbench.action.createTerminalEditor"
   },
-
   // quick open navigation
   {
     "key": "ctrl+n",
@@ -131,7 +125,6 @@
     "command": "extension.vim_ctrl+p",
     "when": "editorTextFocus && vim.active && vim.use<C-p> && !inDebugRepl || vim.active && vim.use<C-p> && !inDebugRepl && vim.mode == 'CommandlineInProgress' || vim.active && vim.use<C-p> && !inDebugRepl && vim.mode == 'SearchInProgressMode' && !inQuickOpen"
   },
-
   // sidebar
   {
     "key": "j",
@@ -143,7 +136,6 @@
     "command": "list.focusAnyUp",
     "when": "sideBarFocus && !inputFocus"
   },
-
   // explorer
   {
     "key": "a",
@@ -195,7 +187,10 @@
     "command": "runCommands",
     "when": "filesExplorerFocus && foldersViewVisible && !explorerResourceIsRoot && !explorerResourceReadonly && !inputFocus",
     "args": {
-      "commands": ["explorer.openToSide", "workbench.action.closeOtherEditors"]
+      "commands": [
+        "explorer.openToSide",
+        "workbench.action.closeOtherEditors"
+      ]
     }
   },
   {
@@ -239,7 +234,6 @@
     "command": "explorer.openAndPassFocus",
     "when": "filesExplorerFocus && foldersViewVisible && !explorerResourceIsRoot && !explorerResourceReadonly && !inputFocus"
   },
-
   // harpoon
   {
     "key": "ctrl+h",
@@ -257,7 +251,6 @@
     "key": "ctrl+l",
     "command": "vscode-harpoon.gotoEditor4"
   },
-
   // sidebar visibility
   {
     "key": "cmd+e",
@@ -282,13 +275,13 @@
     "key": "cmd+e",
     "command": "workbench.action.toggleSidebarVisibility",
     "when": "editorFocus && sideBarVisible"
-},
-{
+  },
+  {
     "key": "shift+enter",
     "command": "workbench.action.terminal.sendSequence",
     "args": {
-        "text": "\u001b\r"
+      "text": "\u001b\r"
     },
     "when": "terminalFocus"
-},
+  }
 ]

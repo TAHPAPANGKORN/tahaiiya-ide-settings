@@ -1,15 +1,62 @@
 [
-  { "identifier": { "id": "vscodevim.vim" } },
-  { "identifier": { "id": "VSpaceCode.whichkey" } },
-  { "identifier": { "id": "jacobdufault.fuzzy-search" } },
-  { "identifier": { "id": "pkief.material-icon-theme" } },
-  { "identifier": { "id": "wheredoesyourmindgo.gruvbox-concoctis" } },
-  { "identifier": { "id": "jackpaget.gruvbox-glass" } },
-  { "identifier": { "id": "zhuangtongfa.material-theme" } },
-  { "identifier": { "id": "azemoh.one-monokai" } },
-  { "identifier": { "id": "esbenp.prettier-vscode" } },
-  { "identifier": { "id": "ms-vscode-remote.remote-ssh" } },
-  { "identifier": { "id": "ms-vscode-remote.remote-ssh-edit" } },
-  { "identifier": { "id": "ms-vscode.remote-server" } },
-  { "identifier": { "id": "ms-vscode.remote-explorer" } }
+    {
+        "identifier": {
+            "id": "azemoh.one-monokai"
+        }
+    },
+    {
+        "identifier": {
+            "id": "jackpaget.gruvbox-glass"
+        }
+    },
+    {
+        "identifier": {
+            "id": "jacobdufault.fuzzy-search"
+        }
+    },
+    {
+        "identifier": {
+            "id": "ms-vscode-remote.remote-ssh"
+        }
+    },
+    {
+        "identifier": {
+            "id": "ms-vscode-remote.remote-ssh-edit"
+        }
+    },
+    {
+        "identifier": {
+            "id": "ms-vscode.remote-explorer"
+        }
+    },
+    {
+        "identifier": {
+            "id": "ms-vscode.remote-server"
+        }
+    },
+    {
+        "identifier": {
+            "id": "pkief.material-icon-theme"
+        }
+    },
+    {
+        "identifier": {
+            "id": "vscodevim.vim"
+        }
+    },
+    {
+        "identifier": {
+            "id": "vspacecode.whichkey"
+        }
+    },
+    {
+        "identifier": {
+            "id": "wheredoesyourmindgo.gruvbox-concoctis"
+        }
+    },
+    {
+        "identifier": {
+            "id": "zhuangtongfa.material-theme"
+        }
+    }
 ]
