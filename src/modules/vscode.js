@@ -305,6 +305,11 @@ export async function injectCustomProfiles(targetDir, hasCodeCLI, opts) {
             const profileExtensionsFile = path.join(profilesSourceDir, profileName, 'extensions.json');
             if (fs.existsSync(profileExtensionsFile)) {
                 await installExtensions(profileExtensionsFile, profileName);
+            } else {
+                const globalExtensionsFile = path.join(PROJECT_ROOT, 'vscode', 'extensions.json');
+                if (fs.existsSync(globalExtensionsFile)) {
+                    await installExtensions(globalExtensionsFile, profileName);
+                }
             }
         }
     }
