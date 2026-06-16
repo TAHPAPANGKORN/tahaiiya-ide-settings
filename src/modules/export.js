@@ -4,13 +4,18 @@ import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
+import os from 'os';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PROJECT_ROOT   = path.resolve(__dirname, '../../config');
-const HOME           = process.env.HOME;
-const VSCODE_USER    = path.join(HOME, 'Library/Application Support/Code/User');
+const HOME           = process.env.HOME || os.homedir();
+const VSCODE_USER    = process.env.VSCODE_TARGET_DIR || (
+    process.platform === 'win32'
+        ? path.join(process.env.APPDATA || path.join(HOME, 'AppData/Roaming'), 'Code/User')
+        : path.join(HOME, 'Library/Application Support/Code/User')
+);
 
 // Default destination — can be overridden at call-time
 const DEFAULT_DEST_VSCODE = path.join(PROJECT_ROOT, 'vscode');
@@ -50,7 +55,7 @@ function listExtensions(profileName = null) {
         const args = ['code', '--list-extensions'];
         if (profileName) args.push('--profile', profileName);
         const raw = execSync(args.join(' '), { encoding: 'utf8' });
-        return raw.trim().split('\n').filter(Boolean);
+        return raw.trim().split(/\r?\n/).map(line => line.trim()).filter(Boolean);
     } catch {
         return null; // code CLI not available
     }
@@ -187,8 +192,8 @@ export async function exportVSCode(options = {}, destDir = DEFAULT_DEST_VSCODE) 
         ...options,
     };
 
-    if (process.platform !== 'darwin') {
-        p.log.warn(pc.yellow('[EXPORT] Warning: This script is optimized for macOS.'));
+    if (process.platform !== 'darwin' && process.platform !== 'win32') {
+        p.log.warn(pc.yellow('[EXPORT] Warning: This script is optimized for macOS and Windows 11.'));
     }
 
     if (!fs.existsSync(VSCODE_USER)) {
