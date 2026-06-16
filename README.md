@@ -28,7 +28,7 @@ npx TAHPAPANGKORN/tahaiiya-ide-settings export
 | :--------| :------:| -----:|
 | macOS   | /      |      |
 | Linux   | x      |      |
-| Windows | x      |      |
+| Windows | /      |      |
 
 
 ## Support Shell Environment Status
