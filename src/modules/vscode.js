@@ -88,11 +88,64 @@ async function installExtensions(extensionsFilePath, profileName = null) {
 
             const updateProgress = (activeExt = '') => {
                 const percent = Math.min(100, Math.round((completedCount / totalCount) * 100));
-                const filledLength = Math.round((percent / 100) * 15);
-                const emptyLength = 15 - filledLength;
-                const progressBar = pc.green('█'.repeat(filledLength)) + pc.gray('░'.repeat(emptyLength));
-                let msg = `${actionLabel} for ${label} [${progressBar}] ${percent}% | ${totalCount - completedCount} remaining`;
-                if (activeExt) msg += ` | installing ${activeExt}`;
+                
+                // Determine available terminal width (defaulting to 80 if not a TTY or columns is undefined)
+                const columns = process.stdout.columns || 80;
+                const availableWidth = columns - 4; // Safety margin for the spinner icon and spacing
+                
+                // 1. Determine base action text
+                let actionText = `${actionLabel} for ${label}`;
+                const statsText = `${percent}% | ${totalCount - completedCount} remaining`;
+                
+                // If text is too long for the terminal, simplify the action text
+                if (actionText.length + statsText.length + 10 > availableWidth) {
+                    actionText = actionLabel; // "Installing extensions"
+                }
+                if (actionText.length + statsText.length + 10 > availableWidth) {
+                    actionText = 'Installing';
+                }
+                
+                // 2. Determine progress bar length based on available space
+                let barLength = 0;
+                let barText = '';
+                const baseTextLength = actionText.length + 3 + statsText.length; // "actionText | statsText"
+                
+                if (baseTextLength + 17 <= availableWidth) {
+                    barLength = 15;
+                } else if (baseTextLength + 12 <= availableWidth) {
+                    barLength = 10;
+                } else if (baseTextLength + 7 <= availableWidth) {
+                    barLength = 5;
+                }
+                
+                if (barLength > 0) {
+                    const filledLength = Math.round((percent / 100) * barLength);
+                    const emptyLength = barLength - filledLength;
+                    barText = ' [' + pc.green('█'.repeat(filledLength)) + pc.gray('░'.repeat(emptyLength)) + ']';
+                }
+                
+                // 3. Determine active extension text if it fits
+                let extText = '';
+                if (activeExt) {
+                    const currentLength = actionText.length + (barLength ? barLength + 3 : 0) + 3 + statsText.length;
+                    const remainingSpace = availableWidth - currentLength - 14; // " | installing ".length is 14
+                    
+                    if (remainingSpace > 0) {
+                        let displayExt = activeExt;
+                        if (activeExt.length > remainingSpace) {
+                            if (remainingSpace > 5) {
+                                displayExt = activeExt.substring(0, remainingSpace - 3) + '...';
+                            } else {
+                                displayExt = '';
+                            }
+                        }
+                        if (displayExt) {
+                            extText = ` | installing ${displayExt}`;
+                        }
+                    }
+                }
+                
+                const msg = `${actionText}${barText} | ${statsText}${extText}`;
                 s.message(msg);
             };
 
